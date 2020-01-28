@@ -11,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dimus/gnidump/util"
 	"github.com/dustin/go-humanize"
 )
 
@@ -234,8 +233,9 @@ func (dmp Dump) handleNameStrings(rows *sql.Rows) error {
 			fmt.Printf("\r%s", strings.Repeat(" ", 35))
 			fmt.Printf("\rDownloaded %s names to csv", humanize.Comma(count))
 		}
-		err := rows.Scan(&id, &name)
-		util.Check(err)
+		if err := rows.Scan(&id, &name); err != nil {
+			return err
+		}
 		name := strings.Replace(name, "\u0000", "", -1)
 		csvRow := []string{id, name}
 
@@ -407,7 +407,10 @@ func (dmp Dump) handleVernacularStringIndices(rows *sql.Rows) error {
 		}
 		err := rows.Scan(&dataSourceID, &taxonID, &vernacularStringID,
 			&language, &locality, &countryCode)
-		util.Check(err)
+		if err != nil {
+			return err
+		}
+
 		csvRow := []string{dataSourceID, taxonID, vernacularStringID,
 			language.String, locality.String, countryCode.String}
 

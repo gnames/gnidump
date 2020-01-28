@@ -2,7 +2,7 @@ package gnidump
 
 import (
 	"github.com/gnames/gnidump/dump"
-	"github.com/gnames/gnidump/restore"
+	"github.com/gnames/gnidump/rebuild"
 )
 
 // GNIdump is an coordinator of all gnidump functionality. It contains complete
@@ -11,7 +11,7 @@ type GNIdump struct {
 	// MyDB is needed for dumping data from previous version of GNI.
 	dump.MyDB
 	// PyDB is needed for loading data to PostgreSQL DB.
-	restore.PgDB
+	rebuild.PgDB
 	// InputDir contains dump data and key-values stores.
 	InputDir string
 	// JobsNum is a number of goroutines for parallel executions.

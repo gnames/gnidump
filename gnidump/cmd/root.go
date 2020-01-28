@@ -125,7 +125,7 @@ func initConfig() {
 	if err := viper.ReadInConfig(); err == nil {
 		//log.Println("Using config file:", viper.ConfigFileUsed())
 	} else {
-		fmt.Println("Config file $HOME/.bhlnames.yaml not found")
+		fmt.Println("Config file $HOME/.gnidump.yaml not found")
 		os.Exit(1)
 	}
 	getOpts()
