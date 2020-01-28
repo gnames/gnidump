@@ -1,0 +1,31 @@
+---
+
+# Path to keep downloaded data and key-value stores
+InputDir: /tmp/bhlnames
+
+# MySQL host
+MyHost: localhost
+
+# MySQL user
+MyUser: root
+
+# MySQL password
+MyPass:
+
+# MySQL database
+MyDB: gni
+
+# Postgresql host
+PgHost: localhost
+
+# Postgresql user
+PgUser: postgres
+
+# Postgresql password
+PgPass:
+
+# Postgresql database
+PgDB: gnindex
+
+# Number of jobs for parallel tasks
+JobsNum: 1
