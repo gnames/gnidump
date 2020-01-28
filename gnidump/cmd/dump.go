@@ -21,7 +21,8 @@
 package cmd
 
 import (
-	"fmt"
+	"log"
+	"os"
 
 	"github.com/gnames/gnidump"
 	"github.com/spf13/cobra"
@@ -33,7 +34,11 @@ var dumpCmd = &cobra.Command{
 	Short: "Dumps GNI data to CSV files.",
 	Run: func(cmd *cobra.Command, args []string) {
 		gnd := gnidump.NewGNIdump(opts...)
-		fmt.Println(gnd)
+		err := gnd.CSVdump()
+		if err != nil {
+			log.Println(err)
+			os.Exit(1)
+		}
 	},
 }
 

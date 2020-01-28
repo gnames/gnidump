@@ -43,11 +43,11 @@ type config struct {
 	MyHost   string
 	MyUser   string
 	MyPass   string
-	MyName   string
+	MyDB     string
 	PgHost   string
 	PgUser   string
 	PgPass   string
-	PgName   string
+	PgDB     string
 	JobsNum  int
 }
 
@@ -155,8 +155,8 @@ func getOpts() []gnidump.Option {
 	if cfg.MyPass != "" {
 		opts = append(opts, gnidump.OptMyPass(cfg.MyPass))
 	}
-	if cfg.MyName != "" {
-		opts = append(opts, gnidump.OptMyDB(cfg.MyName))
+	if cfg.MyDB != "" {
+		opts = append(opts, gnidump.OptMyDB(cfg.MyDB))
 	}
 	if cfg.PgHost != "" {
 		opts = append(opts, gnidump.OptPgHost(cfg.PgHost))
@@ -167,8 +167,8 @@ func getOpts() []gnidump.Option {
 	if cfg.PgPass != "" {
 		opts = append(opts, gnidump.OptPgPass(cfg.PgPass))
 	}
-	if cfg.PgName != "" {
-		opts = append(opts, gnidump.OptPgDB(cfg.PgName))
+	if cfg.PgDB != "" {
+		opts = append(opts, gnidump.OptPgDB(cfg.PgDB))
 	}
 	return opts
 }

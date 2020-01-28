@@ -1,8 +1,6 @@
 package gnidump
 
 import (
-	"fmt"
-
 	"github.com/gnames/gnidump/dump"
 	"github.com/gnames/gnidump/restore"
 )
@@ -26,7 +24,6 @@ func NewGNIdump(opts ...Option) GNIdump {
 	for _, opt := range opts {
 		opt(&gnd)
 	}
-	fmt.Println(gnd)
 	return gnd
 }
 
