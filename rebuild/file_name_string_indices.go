@@ -67,6 +67,7 @@ func (rb Rebuild) dbNameStringIndices(chOut <-chan []NameStringIndex,
 	}
 	fmt.Println()
 	log.Println("Uploaded name_string_indices table")
+	rb.verificationView(db)
 }
 
 func (rb Rebuild) saveNameStringIndices(db *sql.DB, nsi []NameStringIndex) int64 {
@@ -177,4 +178,42 @@ func (rb Rebuild) loadNameStringIndices(chIn chan<- []string) {
 		chIn <- row
 	}
 	close(chIn)
+}
+
+func (rb Rebuild) verificationView(db *sql.DB) {
+	log.Println("Building verification view, it will take some time...")
+	viewQuery := `CREATE MATERIALIZED VIEW verification as
+WITH taxon_names AS (
+SELECT nsi.data_source_id, nsi.taxon_id, ns.id as name_string_id, ns.name
+	FROM name_string_indices nsi JOIN name_strings ns
+		ON nsi.name_string_id = ns.id
+)
+SELECT ns.id, ns.canonical_id, ns.canonical_full_id, ns.name, ns.cardinality,
+  nsi.data_source_id, nsi.taxon_id, nsi.name_string_id,
+  nsi.accepted_taxon_id, tn.name_string_id as accepted_name_id,
+  tn.name as accepted_name, nsi.classification, nsi.classification_ranks
+  FROM name_string_indices nsi
+    JOIN name_strings ns ON ns.id = nsi.name_string_id
+    JOIN taxon_names tn
+      ON nsi.data_source_id = tn.data_source_id AND
+         nsi.name_string_id = tn.name_string_id AND
+         nsi.accepted_taxon_id = tn.taxon_id`
+	_, err := db.Exec("DROP MATERIALIZED VIEW IF EXISTS verification")
+	if err != nil {
+		log.Fatal(err)
+	}
+	_, err = db.Exec(viewQuery)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Println("Building indices for verification view, it will take some time...")
+	_, err = db.Exec("CREATE INDEX ON verification (canonical_id)")
+	if err != nil {
+		log.Fatal(err)
+	}
+	_, err = db.Exec("CREATE INDEX ON verification (id)")
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Println("View verification is created")
 }
