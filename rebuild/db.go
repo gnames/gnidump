@@ -49,6 +49,7 @@ COMMENT ON SCHEMA public IS 'standard public schema'`
 	q = fmt.Sprintf(q, pdb.PgUser)
 	_, err := db.Query(q)
 	if err != nil {
+		log.Println("ResetDB")
 		return err
 	}
 	return db.Close()

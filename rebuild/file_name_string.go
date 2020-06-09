@@ -118,15 +118,22 @@ func (rb Rebuild) saveCanonicals(cs []CanonicalData) {
 	q0 := `INSERT INTO %s (id, name) VALUES %s ON CONFLICT DO NOTHING`
 	q := fmt.Sprintf(q0, "canonicals", strings.Join(cal, ","))
 	if _, err = db.Query(q); err != nil {
+		log.Println("saveCanonicals canonicals")
 		log.Fatal(err)
 	}
-	q = fmt.Sprintf(q0, "canonical_fulls", strings.Join(calFull, ","))
-	if _, err = db.Query(q); err != nil {
-		log.Fatal(err)
+	if len(calFull) > 0 {
+		q = fmt.Sprintf(q0, "canonical_fulls", strings.Join(calFull, ","))
+		if _, err = db.Query(q); err != nil {
+			log.Println("saveCanonicals canonical_fulls")
+			log.Fatal(err)
+		}
 	}
-	q = fmt.Sprintf(q0, "canonical_stems", strings.Join(calStem, ","))
-	if _, err = db.Query(q); err != nil {
-		log.Fatal(err)
+	if len(calStem) > 0 {
+		q = fmt.Sprintf(q0, "canonical_stems", strings.Join(calStem, ","))
+		if _, err = db.Query(q); err != nil {
+			log.Println("saveCanonicals canonical_stems")
+			log.Fatal(err)
+		}
 	}
 }
 

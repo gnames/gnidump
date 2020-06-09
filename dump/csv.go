@@ -63,16 +63,19 @@ func (dmp Dump) updateDataSourcesDate() error {
 						  ON nsi.data_source_id = ds.id`
 	rows, err := dmp.DB.Query(q)
 	if err != nil {
+    log.Println("updateDataSourcesDate")
 		return err
 	}
 	for rows.Next() {
 		err := rows.Scan(&id)
 		if err != nil {
+      log.Println("updateDataSourcesDate")
 			return err
 		}
 		uq := fmt.Sprintf(update, id, id)
 		_, err = dmp.DB.Query(uq)
 		if err != nil {
+      log.Println("updateDataSourcesDate")
 			return err
 		}
 	}
@@ -184,8 +187,9 @@ func (dmp Dump) handleDataSource(rows *sql.Rows, recNum map[int]int) error {
 
 func qualityMaps() (map[int]byte, map[int]byte) {
 	curatedAry := []int{1, 2, 3, 4, 5, 6, 8, 9, 105, 132, 151, 155, 158,
-		163, 165, 167, 172, 173, 174, 175, 176, 177, 181}
-	autoCuratedAry := []int{11, 170, 179}
+		163, 165, 167, 172, 173, 174, 175, 176, 177, 181, 183, 184, 185,
+		187, 188, 189, 193}
+	autoCuratedAry := []int{11, 170, 179, 186}
 
 	curated := make(map[int]byte)
 	autoCurated := make(map[int]byte)

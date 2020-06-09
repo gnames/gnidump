@@ -3,10 +3,8 @@ module github.com/gnames/gnidump
 go 1.13
 
 require (
-	github.com/dgraph-io/badger v1.6.0
 	github.com/dgraph-io/badger/v2 v2.0.1
 	github.com/dustin/go-humanize v1.0.0
-	github.com/gnames/bhlnames v0.0.4
 	github.com/go-sql-driver/mysql v1.5.0
 	github.com/jinzhu/gorm v1.9.12
 	github.com/lib/pq v1.3.0
