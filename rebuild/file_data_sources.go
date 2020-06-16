@@ -122,6 +122,15 @@ var DataSourcesInf = map[int]DataSourceInf{
 			return n.RecordID
 		},
 	},
+	168: {
+		TitleShort: "ION",
+		UUID:       "1137dfa3-5b8c-487d-b497-dc0938605864",
+		HomeURL:    "http://organismnames.com/",
+		OutlinkURL: "http://www.organismnames.com/details.htm?lsid={}",
+		OutlinkID: func(n NameInf) string {
+			return n.RecordID
+		},
+	},
 	170: {
 		TitleShort: "Arctos",
 		UUID:       "eea8315d-a244-4625-859a-226675622312",
