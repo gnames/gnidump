@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-// Describes metadata of a dataset.
+// DataSource describes metadata of a dataset.
 type DataSource struct {
 	// Hard-coded ID that corresponds to historic IDs given by old versions
 	// of resolver.
@@ -50,7 +50,7 @@ type DataSource struct {
 	UpdatedAt time.Time `gorm:"type:timestamp without time zone"`
 }
 
-// Name-strings extracted from datasets.
+// NameString is a name-string extracted from a dataset.
 type NameString struct {
 	// UUID v5 generated from the name-string using DNS:"globalnames.org" as
 	// a seed.
@@ -61,6 +61,8 @@ type NameString struct {
 	Name string `gorm:"type:varchar(255);not_null"`
 	// Number of elements in a 'classic' Linnaen name: 0 - unknown, not available,
 	// 1 - uninomial, 2 - binomial, 3 - trinomial etc.
+	// Cardinality can be used to filter out surrogates and hybrid formulas --
+	// they would have cardinality 0.
 	Cardinality sql.NullInt32 `gorm:"type:int"`
 	// UUID v5 generated for simple canonical form.
 	CanonicalID sql.NullString `gorm:"type:uuid;index:canonical"`
@@ -71,15 +73,17 @@ type NameString struct {
 	CanonicalStemID sql.NullString `gorm:"type:uuid;index:canonical_stem"`
 }
 
-// Simple canonical form.
+// Canonical is a 'simple' canonical form.
 type Canonical struct {
 	// UUID v5 generated for simple canonical form.
 	ID string `gorm:"type:uuid;primary_key;auto_increment:false"`
 	// Canonical name-string
 	Name string `gorm:"type:varchar(255);not_null"`
+	// NameStem is a stemmed version of the canonical form.
+	NameStem string `gorm:"type:varchar(255);not_null;index:canonical_canonical_stem"`
 }
 
-// Full canonical form.
+// CanonicalFull ia a full canonical form.
 type CanonicalFull struct {
 	// UUID v5 generated for 'full' canonical form (with infraspecific ranks
 	// and hybrid signs for named hybrids).
@@ -88,7 +92,7 @@ type CanonicalFull struct {
 	Name string `gorm:"type:varchar(255);not_null"`
 }
 
-// Stemmed derivative of a simple canonical form.
+// CanonicalStem is a stemmed derivative of a simple canonical form.
 type CanonicalStem struct {
 	// UUID v5 for the stemmed derivative of a simple canonical form.
 	ID string `gorm:"type:uuid;primary_key;auto_increment:false"`
@@ -96,7 +100,7 @@ type CanonicalStem struct {
 	Name string `gorm:"type:varchar(255);not_null"`
 }
 
-// Name-strings relations to datasets.
+// NameStringIndex is a name-strings relations to datasets.
 type NameStringIndex struct {
 	// Dataset ID
 	DataSourceID int `gorm:"primary_key;auto_increment:false"`

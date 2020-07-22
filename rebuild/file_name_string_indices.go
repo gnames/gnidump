@@ -19,6 +19,8 @@ import (
 	"github.com/lib/pq"
 )
 
+// List of fields from the name-string indices CSV file. The value corresponds
+// to the position of the field in a row.
 const (
 	nsiDataSourceIDF        = 0
 	nsiNameStringIDF        = 1
@@ -33,9 +35,11 @@ const (
 	nsiClassificationRanksF = 11
 )
 
+// UploadNameStringIndices constracts data for name_string_indices table and
+// aploads them to the database.
 func (rb Rebuild) UploadNameStringIndices() {
 	log.Println("Uploading data for name_string_indices table")
-	kv := keyval.InitKeyVal(rb.KeyValDir)
+	kv := keyval.InitKeyVal(rb.ParserKeyValDir)
 	defer kv.Close()
 	chIn := make(chan []string)
 	chOut := make(chan []NameStringIndex)
@@ -116,6 +120,7 @@ func (rb Rebuild) saveNameStringIndices(db *sql.DB, nsi []NameStringIndex) int64
 	}
 	return int64(len(nsi))
 }
+
 func (rb Rebuild) workerNameStringIndex(kv *badger.DB, chIn <-chan []string,
 	chOut chan<- []NameStringIndex, wg *sync.WaitGroup) {
 	defer wg.Done()
@@ -183,6 +188,7 @@ func (rb Rebuild) loadNameStringIndices(chIn chan<- []string) {
 	close(chIn)
 }
 
+// verificationView creates data for a materialized view.
 func (rb Rebuild) verificationView(db *sql.DB) {
 	log.Println("Building verification view, it will take some time...")
 	viewQuery := `CREATE MATERIALIZED VIEW verification as

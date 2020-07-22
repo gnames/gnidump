@@ -14,6 +14,7 @@ import (
 	"github.com/dustin/go-humanize"
 )
 
+// CreateCSV creates all the CSV file needed for migration of the data.
 func (dmp Dump) CreateCSV() error {
 	err := dmp.updateDataSourcesDate()
 	if err != nil {
@@ -63,19 +64,19 @@ func (dmp Dump) updateDataSourcesDate() error {
 						  ON nsi.data_source_id = ds.id`
 	rows, err := dmp.DB.Query(q)
 	if err != nil {
-    log.Println("updateDataSourcesDate")
+		log.Println("updateDataSourcesDate")
 		return err
 	}
 	for rows.Next() {
 		err := rows.Scan(&id)
 		if err != nil {
-      log.Println("updateDataSourcesDate")
+			log.Println("updateDataSourcesDate")
 			return err
 		}
 		uq := fmt.Sprintf(update, id, id)
 		_, err = dmp.DB.Query(uq)
 		if err != nil {
-      log.Println("updateDataSourcesDate")
+			log.Println("updateDataSourcesDate")
 			return err
 		}
 	}
@@ -235,7 +236,7 @@ func (dmp Dump) handleNameStrings(rows *sql.Rows) error {
 		count++
 		if count%1_000_000 == 0 {
 			fmt.Printf("\r%s", strings.Repeat(" ", 35))
-			fmt.Printf("\rDownloaded %s names to csv", humanize.Comma(count))
+			fmt.Printf("\rDownloaded %s names to a CSV file", humanize.Comma(count))
 		}
 		if err := rows.Scan(&id, &name); err != nil {
 			return err
@@ -252,7 +253,7 @@ func (dmp Dump) handleNameStrings(rows *sql.Rows) error {
 	w.Flush()
 	file.Sync()
 	fmt.Printf("\r%s", strings.Repeat(" ", 35))
-	fmt.Printf("\rDownloaded %s names to csv\n", humanize.Comma(count))
+	fmt.Printf("\rDownloaded %s names to a CSV file\n", humanize.Comma(count))
 	return nil
 }
 
@@ -298,7 +299,7 @@ func (dmp Dump) handleNameStringIndices(rows *sql.Rows) error {
 		count++
 		if count%100_000 == 0 {
 			fmt.Printf("\r%s", strings.Repeat(" ", 35))
-			fmt.Printf("\rDownloaded %s name indices to csv", humanize.Comma(count))
+			fmt.Printf("\rDownloaded %s name indices to a CSV file", humanize.Comma(count))
 		}
 		err := rows.Scan(&dataSourceID, &nameStringID, &url, &taxonID,
 			&globalID, &localID, &nomenclaturalCodeID, &rank, &acceptedTaxonID,
@@ -320,7 +321,7 @@ func (dmp Dump) handleNameStringIndices(rows *sql.Rows) error {
 	w.Flush()
 	file.Sync()
 	fmt.Printf("\r%s", strings.Repeat(" ", 35))
-	fmt.Printf("\rDownloaded %s name indices to csv\n", humanize.Comma(count))
+	fmt.Printf("\rDownloaded %s name indices to a CSV file\n", humanize.Comma(count))
 	return nil
 }
 
@@ -366,7 +367,7 @@ func (dmp Dump) handleVernacularStrings(rows *sql.Rows) error {
 			return err
 		}
 	}
-	fmt.Printf("Downloaded %s vernaculars to csv\n", humanize.Comma(count))
+	fmt.Printf("Downloaded %s vernaculars to a CSV file\n", humanize.Comma(count))
 	w.Flush()
 	return file.Sync()
 }
@@ -407,7 +408,7 @@ func (dmp Dump) handleVernacularStringIndices(rows *sql.Rows) error {
 		count++
 		if count%100_000 == 0 {
 			fmt.Printf("\r%s", strings.Repeat(" ", 35))
-			fmt.Printf("\rDownloaded %s verncular indices to csv", humanize.Comma(count))
+			fmt.Printf("\rDownloaded %s verncular indices to a CSV file", humanize.Comma(count))
 		}
 		err := rows.Scan(&dataSourceID, &taxonID, &vernacularStringID,
 			&language, &locality, &countryCode)
@@ -424,6 +425,6 @@ func (dmp Dump) handleVernacularStringIndices(rows *sql.Rows) error {
 	}
 	w.Flush()
 	fmt.Printf("\r%s", strings.Repeat(" ", 35))
-	fmt.Printf("\rDownloaded %s verncular indices to csv\n", humanize.Comma(count))
+	fmt.Printf("\rDownloaded %s verncular indices to a CSV file\n", humanize.Comma(count))
 	return file.Sync()
 }

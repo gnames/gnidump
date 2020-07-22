@@ -25,7 +25,7 @@ PgUser: postgres
 PgPass:
 
 # Postgresql database
-PgDB: gnindex
+PgDB: gnames
 
 # Number of jobs for parallel tasks
 JobsNum: 1

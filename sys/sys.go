@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 )
 
+// MakeDir creates a directory with subdirectories recursively.
 func MakeDir(dir string) error {
 	path, err := os.Stat(dir)
 	if os.IsNotExist(err) {
@@ -19,6 +20,8 @@ func MakeDir(dir string) error {
 	return nil
 }
 
+// FileExists checks if a file exists in a filesystem and that it is really
+// a file.
 func FileExists(f string) bool {
 	path, err := os.Stat(f)
 	if os.IsNotExist(err) {

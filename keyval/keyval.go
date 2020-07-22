@@ -7,8 +7,8 @@ import (
 	"github.com/gnames/gnidump/sys"
 )
 
-// InitBadger finds and initializes connection to a badger key-value store.
-// If the store does not exist, InitBadger creates it.
+// InitKeyVal --- InitBadger finds and initializes connection to a badger
+// key-value store. If the store does not exist, InitBadger creates it.
 func InitKeyVal(dir string) *badger.DB {
 	options := badger.DefaultOptions(dir)
 	options.Logger = nil
@@ -19,6 +19,7 @@ func InitKeyVal(dir string) *badger.DB {
 	return bdb
 }
 
+// GetValue gets a value for a key in a key-value store.
 func GetValue(kv *badger.DB, key string) string {
 	txn := kv.NewTransaction(false)
 	defer func() {
@@ -43,6 +44,7 @@ func GetValue(kv *badger.DB, key string) string {
 	return string(res)
 }
 
+// ResetKeyVal cleans key-value store from old data.
 func ResetKeyVal(dir string) error {
 	return sys.CleanDir(dir)
 }

@@ -20,11 +20,14 @@ import (
 	"gitlab.com/gogna/gnparser"
 )
 
+// List of fields from name-strings CSV file. The value correspondes to the
+// position of a field in a row.
 const (
 	nsIDF   = 0
 	nsNameF = 1
 )
 
+// Canonical Data provides data about various canonical forms of a name-string.
 type CanonicalData struct {
 	ID        string
 	Value     string
@@ -34,16 +37,19 @@ type CanonicalData struct {
 	StemValue string
 }
 
+// UploadNameString constructs data for name_strings, canonicals,
+// canonical_fulls, canonical_stems tables and uploads these data to the
+// database.
 func (rb Rebuild) UploadNameString() error {
 	log.Println("Uploading data for name_strings table")
 	chIn := make(chan []string)
 	chCan := make(chan []CanonicalData)
 	chOut := make(chan []NameString)
-	err := keyval.ResetKeyVal(rb.KeyValDir)
+	err := keyval.ResetKeyVal(rb.ParserKeyValDir)
 	if err != nil {
 		return err
 	}
-	kv := keyval.InitKeyVal(rb.KeyValDir)
+	kv := keyval.InitKeyVal(rb.ParserKeyValDir)
 	defer kv.Close()
 	var wg sync.WaitGroup
 	var wg2 sync.WaitGroup
@@ -104,23 +110,27 @@ func (rb Rebuild) saveCanonicals(cs []CanonicalData) {
 	calFull := make([]string, 0, len(cs))
 	calStem := make([]string, 0, len(cs))
 	for i, v := range cs {
-		cal[i] = fmt.Sprintf("('%s', %s)", v.ID, QuoteString(v.Value))
 		if v.FullID != "" {
 			calFull = append(calFull,
 				fmt.Sprintf("('%s', %s)", v.FullID, QuoteString(v.FullValue)))
 		}
 		if v.StemID != "" {
+			cal[i] = fmt.Sprintf("('%s', %s, %s)", v.ID, QuoteString(v.Value),
+				QuoteString(v.StemValue))
 			calStem = append(calStem,
 				fmt.Sprintf("('%s', %s)", v.StemID, QuoteString(v.StemValue)))
+		} else {
+			cal[i] = fmt.Sprintf("('%s', %s, NULL)", v.ID, QuoteString(v.Value))
 		}
 	}
 
-	q0 := `INSERT INTO %s (id, name) VALUES %s ON CONFLICT DO NOTHING`
+	q0 := `INSERT INTO %s (id, name, name_stem) VALUES %s ON CONFLICT DO NOTHING`
 	q := fmt.Sprintf(q0, "canonicals", strings.Join(cal, ","))
 	if _, err = db.Query(q); err != nil {
-		log.Println("saveCanonicals canonicals")
+		err = fmt.Errorf("Failed to populate canonicals table: %w", err)
 		log.Fatal(err)
 	}
+	q0 = `INSERT INTO %s (id, name) VALUES %s ON CONFLICT DO NOTHING`
 	if len(calFull) > 0 {
 		q = fmt.Sprintf(q0, "canonical_fulls", strings.Join(calFull, ","))
 		if _, err = db.Query(q); err != nil {

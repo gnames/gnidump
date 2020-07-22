@@ -22,14 +22,50 @@ package cmd
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 
 	"github.com/gnames/gnidump"
+	"github.com/gnames/gnidump/sys"
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
+
+const configText = `---
+
+# Path to keep downloaded data and key-value stores
+InputDir: /tmp/gnidump
+
+# MySQL host
+MyHost: localhost
+
+# MySQL user
+MyUser: root
+
+# MySQL password
+MyPass:
+
+# MySQL database
+MyDB: gni
+
+# Postgresql host
+PgHost: localhost
+
+# Postgresql user
+PgUser: postgres
+
+# Postgresql password
+PgPass:
+
+# Postgresql database
+PgDB: gnames
+
+# Number of jobs for parallel tasks
+JobsNum: 4
+`
 
 var (
 	cfgFile string
@@ -103,23 +139,31 @@ func init() {
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
+	var err error
+	var home string
+	configFile := "gnidump"
+
 	if cfgFile != "" {
 		// Use config file from the flag.
 		viper.SetConfigFile(cfgFile)
 	} else {
 		// Find home directory.
-		home, err := homedir.Dir()
+		home, err = homedir.Dir()
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
+		home = filepath.Join(home, ".config")
 
 		// Search config in home directory with name ".gnidump" (without extension).
 		viper.AddConfigPath(home)
-		viper.SetConfigName(".gnidump")
+		viper.SetConfigName(configFile)
 	}
 
 	viper.AutomaticEnv() // read in environment variables that match
+
+	configPath := filepath.Join(home, fmt.Sprintf("%s.yaml", configFile))
+	touchConfigFile(configPath, configFile)
 
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {
@@ -171,4 +215,27 @@ func getOpts() []gnidump.Option {
 		opts = append(opts, gnidump.OptPgDB(cfg.PgDB))
 	}
 	return opts
+}
+
+// touchConfigFile checks if config file exists, and if not, it gets created.
+func touchConfigFile(configPath string, configFile string) {
+	if sys.FileExists(configPath) {
+		return
+	}
+
+	log.Println("Creating config file:", configPath)
+	createConfig(configPath, configFile)
+}
+
+// createConfig creates config file.
+func createConfig(path string, file string) {
+	err := sys.MakeDir(filepath.Dir(path))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = ioutil.WriteFile(path, []byte(configText), 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
 }

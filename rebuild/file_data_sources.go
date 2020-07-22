@@ -12,6 +12,8 @@ import (
 	"time"
 )
 
+// List of fields indices for data sources CSV file. The value corresponds to
+// the position of a field in the row.
 const (
 	dsIDF            = 0
 	dsTitleF         = 1
@@ -24,6 +26,7 @@ const (
 	dsRecordCountF   = 14
 )
 
+// DataSourceInf provides fields associated with a DataSource
 type DataSourceInf struct {
 	TitleShort string
 	UUID       string
@@ -33,6 +36,8 @@ type DataSourceInf struct {
 	OutlinkID  func(n NameInf) string
 }
 
+// NameInf provides fields associated with a name-string in a particular
+// data source.
 type NameInf struct {
 	RecordID         string
 	AcceptedRecordID string
@@ -42,6 +47,7 @@ type NameInf struct {
 	CanonicalFull    string
 }
 
+// DataSourcesInf provides missing data for data_sources table.
 var DataSourcesInf = map[int]DataSourceInf{
 	1: {
 		TitleShort: "Catalogue of Life",
@@ -234,10 +240,11 @@ var DataSourcesInf = map[int]DataSourceInf{
 	},
 }
 
+// UploadDataSources populates data_sources table with data.
 func (rb Rebuild) UploadDataSources() error {
 	db := rb.NewDbGorm()
 	defer db.Close()
-	log.Println("Uploading data for name_strings table")
+	log.Println("Populating data_sources table")
 	ds, err := rb.loadDataSources()
 	if err != nil {
 		return err
