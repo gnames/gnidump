@@ -71,6 +71,10 @@ type NameString struct {
 	CanonicalFullID sql.NullString `gorm:"type:uuid;index:canonical_full"`
 	// UUID v5 for the stemmed derivative of a simple canonical form.
 	CanonicalStemID sql.NullString `gorm:"type:uuid;index:canonical_stem"`
+	// Virus indicates if a name-string seems to be virus-like.
+	Virus bool `gorm:"type:bool"`
+	// Surrogate indicates if a name-string is a surrogate name.
+	Surrogate bool `gorm:"type:bool"`
 }
 
 // Canonical is a 'simple' canonical form.

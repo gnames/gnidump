@@ -18,6 +18,7 @@ import (
 	"github.com/lib/pq"
 	uuid "github.com/satori/go.uuid"
 	"gitlab.com/gogna/gnparser"
+	"gitlab.com/gogna/gnparser/pb"
 )
 
 // List of fields from name-strings CSV file. The value correspondes to the
@@ -149,7 +150,7 @@ func (rb Rebuild) saveCanonicals(cs []CanonicalData) {
 
 func (rb Rebuild) saveNameStrings(db *sql.DB, ns []NameString) int64 {
 	columns := []string{"id", "name", "cardinality", "canonical_id",
-		"canonical_full_id", "canonical_stem_id"}
+		"canonical_full_id", "canonical_stem_id", "virus", "surrogate"}
 	transaction, err := db.Begin()
 	if err != nil {
 		log.Fatal(err)
@@ -160,7 +161,7 @@ func (rb Rebuild) saveNameStrings(db *sql.DB, ns []NameString) int64 {
 	}
 	for _, v := range ns {
 		_, err = stmt.Exec(v.ID, v.Name, v.Cardinality, v.CanonicalID,
-			v.CanonicalFullID, v.CanonicalStemID)
+			v.CanonicalFullID, v.CanonicalStemID, v.Virus, v.Surrogate)
 	}
 	if err != nil {
 		log.Fatal(err)
@@ -243,6 +244,17 @@ func (rb Rebuild) workerNameString(kv *badger.DB, chIn <-chan []string,
 			}
 			cans = append(cans, can)
 		}
+
+		var virus bool
+		if p.NameType == pb.NameType_VIRUS {
+			virus = true
+		}
+
+		var surrogate bool
+		if p.NameType == pb.NameType_SURROGATE ||
+			p.NameType == pb.NameType_APPROX_SURROGATE {
+			surrogate = true
+		}
 		_ = canonicalStemID
 		n := NameString{
 			ID:              p.Id,
@@ -251,6 +263,8 @@ func (rb Rebuild) workerNameString(kv *badger.DB, chIn <-chan []string,
 			CanonicalID:     canonicalID,
 			CanonicalFullID: canonicalFullID,
 			CanonicalStemID: canonicalStemID,
+			Virus:           virus,
+			Surrogate:       surrogate,
 		}
 		if i < rb.Batch {
 			res[i] = n
