@@ -194,12 +194,14 @@ func (rb Rebuild) verificationView(db *sql.DB) {
 	viewQuery := `CREATE MATERIALIZED VIEW verification AS
 WITH taxon_names AS (
 SELECT nsi.data_source_id, nsi.record_id, ns.id as name_string_id, ns.name
-	FROM name_string_indices nsi JOIN name_strings ns
-		ON nsi.name_string_id = ns.id
+  FROM name_string_indices nsi
+    JOIN name_strings ns
+      ON nsi.name_string_id = ns.id
 )
-SELECT ns.id, ns.canonical_id, ns.canonical_full_id, ns.name, ns.cardinality,
-  nsi.data_source_id, nsi.record_id, nsi.name_string_id, nsi.local_id,
-  nsi.outlink_id, nsi.accepted_record_id, tn.name_string_id as accepted_name_id,
+SELECT nsi.data_source_id, nsi.record_id, nsi.name_string_id,
+  ns.name, ns.cardinality, ns.canonical_id,
+  nsi.local_id, nsi.outlink_id, nsi.accepted_record_id,
+  tn.name_string_id as accepted_name_id,
   tn.name as accepted_name, nsi.classification, nsi.classification_ranks
   FROM name_string_indices nsi
     JOIN name_strings ns ON ns.id = nsi.name_string_id
@@ -224,7 +226,7 @@ SELECT ns.id, ns.canonical_id, ns.canonical_full_id, ns.name, ns.cardinality,
 		log.Printf("verificationView")
 		log.Fatal(err)
 	}
-	_, err = db.Exec("CREATE INDEX ON verification (id)")
+	_, err = db.Exec("CREATE INDEX ON verification (name_string_id)")
 	if err != nil {
 		log.Printf("verificationView")
 		log.Fatal(err)

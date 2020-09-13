@@ -21,7 +21,7 @@ type DataSource struct {
 	Version string `gorm:"type:varchar(50)"`
 	// Time when the dataset was created.
 	// Follows a format of a 'YYYY-MM-DD' || 'YYYY-MM' || 'YYYY'.
-	CreationDate string
+	RevisionDate string
 	// DOI of the dataset (if exists).
 	DOI string `gorm:"type:varchar(50)"`
 	// A reference that can be used to cite the dataset.
