@@ -72,6 +72,7 @@ func (rb Rebuild) dbNameStringIndices(chOut <-chan []NameStringIndex,
 	}
 	fmt.Println()
 	log.Println("Uploaded name_string_indices table")
+	rb.removeOrphans(db)
 	rb.verificationView(db)
 }
 
@@ -186,6 +187,72 @@ func (rb Rebuild) loadNameStringIndices(chIn chan<- []string) {
 		chIn <- row
 	}
 	close(chIn)
+}
+
+func (rb Rebuild) removeOrphans(db *sql.DB) {
+	log.Println("Removing orphan name-strings")
+	q := `DELETE FROM name_strings
+  WHERE id IN (
+    SELECT ns.id
+      FROM name_strings ns
+        LEFT OUTER JOIN name_string_indices nsi
+          ON ns.id = nsi.name_string_id
+      WHERE nsi.name_string_id IS NULL
+    )`
+
+	_, err := db.Exec(q)
+	if err != nil {
+		log.Printf("removeOrphans 1")
+		log.Fatal(err)
+	}
+
+	log.Println("Removing orphan canonicals")
+	q = `DELETE FROM canonicals
+  WHERE id IN (
+    SELECT c.id
+      FROM canonicals  c
+        LEFT OUTER JOIN name_strings ns
+          ON c.id = ns.canonical_id
+      WHERE ns.id IS NULL
+    )`
+
+	_, err = db.Exec(q)
+	if err != nil {
+		log.Printf("removeOrphans 2")
+		log.Fatal(err)
+	}
+
+	log.Println("Removing orphan canonical_fulls")
+	q = `DELETE FROM canonical_fulls
+  WHERE id IN (
+    SELECT cf.id
+      FROM canonical_fulls  cf
+        LEFT OUTER JOIN name_strings ns
+          ON cf.id = ns.canonical_full_id
+      WHERE ns.id IS NULL
+    )`
+
+	_, err = db.Exec(q)
+	if err != nil {
+		log.Printf("removeOrphans 3")
+		log.Fatal(err)
+	}
+
+	log.Println("Removing orphan canonical_stems")
+	q = `DELETE FROM canonical_stems
+    WHERE id IN (
+      SELECT cs.id
+        FROM canonical_stems  cs
+          LEFT OUTER JOIN name_strings ns
+            ON cs.id = ns.canonical_stem_id
+        WHERE ns.id IS NULL
+      )`
+	_, err = db.Exec(q)
+	if err != nil {
+		log.Printf("removeOrphans 4")
+		log.Fatal(err)
+	}
+
 }
 
 // verificationView creates data for a materialized view.
