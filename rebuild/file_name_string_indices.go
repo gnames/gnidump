@@ -260,7 +260,7 @@ func (rb Rebuild) verificationView(db *sql.DB) {
 	log.Println("Building verification view, it will take some time...")
 	viewQuery := `CREATE MATERIALIZED VIEW verification AS
 WITH taxon_names AS (
-SELECT nsi.data_source_id, nsi.record_id, ns.id as name_string_id, ns.name
+SELECT nsi.data_source_id, nsi.record_id, nsi.name_string_id, ns.name
   FROM name_string_indices nsi
     JOIN name_strings ns
       ON nsi.name_string_id = ns.id
@@ -272,9 +272,8 @@ SELECT nsi.data_source_id, nsi.record_id, nsi.name_string_id,
   tn.name as accepted_name, nsi.classification, nsi.classification_ranks
   FROM name_string_indices nsi
     JOIN name_strings ns ON ns.id = nsi.name_string_id
-    JOIN taxon_names tn
+    LEFT JOIN taxon_names tn
       ON nsi.data_source_id = tn.data_source_id AND
-         nsi.name_string_id = tn.name_string_id AND
          nsi.accepted_record_id = tn.record_id
   WHERE (ns.canonical_id is not NULL AND surrogate != TRUE) OR ns.virus = TRUE`
 	_, err := db.Exec("DROP MATERIALIZED VIEW IF EXISTS verification")
