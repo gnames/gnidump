@@ -101,7 +101,7 @@ var DataSourcesInf = map[int]DataSourceInf{
 		UUID:       "bacd21f0-44e0-43e2-914c-70929916f257",
 	},
 	11: {
-		TitleShort: "GBIF",
+		TitleShort: "GBIF Backbone Taxonomy",
 		UUID:       "eebb6f49-e1a1-4f42-b9d5-050844c893cd",
 	},
 	12: {
@@ -208,7 +208,7 @@ var DataSourcesInf = map[int]DataSourceInf{
 		DataURL:    "https://www.worldbirdnames.org/ioc-lists/master-list-2/",
 	},
 	186: {
-		TitleShort: "MCZBase",
+		TitleShort: "MCZbase",
 		UUID:       "c79d055b-211b-40de-8e27-618011656265",
 		HomeURL:    "https://mczbase.mcz.harvard.edu/",
 		OutlinkURL: "https://mczbase.mcz.harvard.edu/name/{}",
