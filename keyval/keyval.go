@@ -4,7 +4,7 @@ import (
 	"log"
 
 	"github.com/dgraph-io/badger/v2"
-	"github.com/gnames/gnidump/sys"
+	"github.com/gnames/gnlib/sys"
 )
 
 // InitKeyVal --- InitBadger finds and initializes connection to a badger

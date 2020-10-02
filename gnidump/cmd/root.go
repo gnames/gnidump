@@ -28,7 +28,7 @@ import (
 	"path/filepath"
 
 	"github.com/gnames/gnidump"
-	"github.com/gnames/gnidump/sys"
+	"github.com/gnames/gnlib/sys"
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -37,7 +37,7 @@ import (
 const configText = `---
 
 # Path to keep downloaded data and key-value stores
-InputDir: /tmp/gnidump
+InputDir: ~/.local/share/gnidump
 
 # MySQL host
 MyHost: localhost

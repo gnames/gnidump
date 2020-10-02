@@ -1,8 +1,13 @@
 package gnidump
 
 import (
+	"log"
+	"path/filepath"
+	"strings"
+
 	"github.com/gnames/gnidump/dump"
 	"github.com/gnames/gnidump/rebuild"
+	"github.com/mitchellh/go-homedir"
 )
 
 // GNIdump is an coordinator of all gnidump functionality. It contains complete
@@ -23,6 +28,14 @@ func NewGNIdump(opts ...Option) GNIdump {
 	gnd := GNIdump{JobsNum: 1}
 	for _, opt := range opts {
 		opt(&gnd)
+	}
+	if strings.HasPrefix(gnd.InputDir, "~/") ||
+		strings.HasPrefix(gnd.InputDir, "~\\") {
+		home, err := homedir.Dir()
+		if err != nil {
+			log.Fatal(err)
+		}
+		gnd.InputDir = filepath.Join(home, gnd.InputDir[2:])
 	}
 	return gnd
 }

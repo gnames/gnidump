@@ -2,11 +2,7 @@ package rebuild
 
 import (
 	"path/filepath"
-
-	uuid "github.com/satori/go.uuid"
 )
-
-var gnNameSpace = uuid.NewV5(uuid.NamespaceDNS, "globalnames.org")
 
 // Rebuild provides configuration for database rebuilding process
 type Rebuild struct {

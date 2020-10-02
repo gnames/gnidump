@@ -15,8 +15,8 @@ import (
 	badger "github.com/dgraph-io/badger/v2"
 	"github.com/dustin/go-humanize"
 	"github.com/gnames/gnidump/keyval"
+	"github.com/gnames/gnlib/gnuuid"
 	"github.com/lib/pq"
-	uuid "github.com/satori/go.uuid"
 	"gitlab.com/gogna/gnparser"
 	"gitlab.com/gogna/gnparser/pb"
 )
@@ -30,12 +30,13 @@ const (
 
 // Canonical Data provides data about various canonical forms of a name-string.
 type CanonicalData struct {
-	ID        string
-	Value     string
-	FullID    string
-	FullValue string
-	StemID    string
-	StemValue string
+	ID          string
+	Value       string
+	FullID      string
+	FullValue   string
+	StemID      string
+	StemValue   string
+	Cardinality int
 }
 
 // UploadNameString constructs data for name_strings, canonicals,
@@ -125,10 +126,13 @@ func (rb Rebuild) saveCanonicals(cs []CanonicalData) {
 		}
 	}
 
-	q0 := `INSERT INTO %s (id, name, name_stem) VALUES %s ON CONFLICT DO NOTHING`
-	q := fmt.Sprintf(q0, "canonicals", strings.Join(cal, ","))
+	q0 := `INSERT INTO canonicals (id, name, name_stem)
+           VALUES %s
+             ON CONFLICT (id) DO NOTHING`
+	q := fmt.Sprintf(q0, strings.Join(cal, ","))
 	if _, err = db.Query(q); err != nil {
 		err = fmt.Errorf("Failed to populate canonicals table: %w", err)
+		fmt.Println(q)
 		log.Fatal(err)
 	}
 	q0 = `INSERT INTO %s (id, name) VALUES %s ON CONFLICT DO NOTHING`
@@ -218,31 +222,32 @@ func (rb Rebuild) workerNameString(kv *badger.DB, chIn <-chan []string,
 			}
 			val := p.Canonical.GetSimple()
 			canonicalID = sql.NullString{
-				String: uuid.NewV5(gnNameSpace, val).String(),
+				String: gnuuid.New(val).String(),
 				Valid:  true,
 			}
-			can := CanonicalData{ID: canonicalID.String, Value: val}
+			canData := CanonicalData{ID: canonicalID.String, Value: val, Cardinality: int(p.Cardinality)}
 
 			if p.Canonical.GetSimple() != p.Canonical.GetFull() {
 				val = p.Canonical.GetFull()
 				canonicalFullID = sql.NullString{
-					String: uuid.NewV5(gnNameSpace, val).String(),
+					String: gnuuid.New(val).String(),
 					Valid:  true,
 				}
-				can.FullID = canonicalFullID.String
-				can.FullValue = val
+				canData.FullID = canonicalFullID.String
+				canData.FullValue = val
 			}
 			// Stems used for fuzzy matching, and we do not fuzzy match uninomials.
+			// if p.Cardinality > 1 {
 			if p.Cardinality > 1 {
 				val = p.Canonical.GetStem()
 				canonicalStemID = sql.NullString{
-					String: uuid.NewV5(gnNameSpace, val).String(),
+					String: gnuuid.New(val).String(),
 					Valid:  true,
 				}
-				can.StemID = canonicalStemID.String
-				can.StemValue = val
+				canData.StemID = canonicalStemID.String
+				canData.StemValue = val
 			}
-			cans = append(cans, can)
+			cans = append(cans, canData)
 		}
 
 		var virus bool
@@ -255,7 +260,6 @@ func (rb Rebuild) workerNameString(kv *badger.DB, chIn <-chan []string,
 			p.NameType == pb.NameType_APPROX_SURROGATE {
 			surrogate = true
 		}
-		_ = canonicalStemID
 		n := NameString{
 			ID:              p.Id,
 			Name:            p.Verbatim,

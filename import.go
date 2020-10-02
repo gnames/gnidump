@@ -4,7 +4,7 @@ import (
 	"log"
 
 	"github.com/gnames/gnidump/dump"
-	"github.com/gnames/gnidump/sys"
+	"github.com/gnames/gnlib/sys"
 )
 
 func (gnd GNIdump) CSVdump() error {

@@ -3,7 +3,7 @@ package gnidump
 import (
 	"fmt"
 	"github.com/gnames/gnidump/rebuild"
-	"github.com/gnames/gnidump/sys"
+	"github.com/gnames/gnlib/sys"
 	"log"
 )
 
