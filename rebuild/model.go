@@ -38,6 +38,12 @@ type DataSource struct {
 	// A template for creation of an outlink for a dataset record. It contains
 	// a placeholder '{}' for the record's OutlinkID.
 	OutlinkURL string
+	// IsOutlinkReady means that the data-source has enough metainformation,
+	// URLs, harvests to be generally good to be pointed out as a 'mature'
+	// data-source at gnames. Resources that are harvested too long time ago
+	// or do not have WebsiteURL/OutlinkURLs would normally have this flag set
+	// to false.
+	IsOutlinkReady bool
 	// Is true if a dataset undergoes a significant manual curation.
 	IsCurated bool
 	// Is true if a dataset undergoes a significant automatic curation by
