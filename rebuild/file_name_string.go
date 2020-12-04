@@ -112,30 +112,25 @@ func (rb Rebuild) saveCanonicals(cs []CanonicalData) {
 	calFull := make([]string, 0, len(cs))
 	calStem := make([]string, 0, len(cs))
 	for i, v := range cs {
+		cal[i] = fmt.Sprintf("('%s', %s)", v.ID, QuoteString(v.Value))
+
 		if v.FullID != "" {
 			calFull = append(calFull,
 				fmt.Sprintf("('%s', %s)", v.FullID, QuoteString(v.FullValue)))
 		}
 		if v.StemID != "" {
-			cal[i] = fmt.Sprintf("('%s', %s, %s)", v.ID, QuoteString(v.Value),
-				QuoteString(v.StemValue))
 			calStem = append(calStem,
 				fmt.Sprintf("('%s', %s)", v.StemID, QuoteString(v.StemValue)))
-		} else {
-			cal[i] = fmt.Sprintf("('%s', %s, NULL)", v.ID, QuoteString(v.Value))
 		}
 	}
 
-	q0 := `INSERT INTO canonicals (id, name, name_stem)
-           VALUES %s
-             ON CONFLICT (id) DO NOTHING`
-	q := fmt.Sprintf(q0, strings.Join(cal, ","))
+	q0 := `INSERT INTO %s (id, name) VALUES %s ON CONFLICT DO NOTHING`
+	q := fmt.Sprintf(q0, "canonicals", strings.Join(cal, ","))
 	if _, err = db.Query(q); err != nil {
 		err = fmt.Errorf("Failed to populate canonicals table: %w", err)
 		fmt.Println(q)
 		log.Fatal(err)
 	}
-	q0 = `INSERT INTO %s (id, name) VALUES %s ON CONFLICT DO NOTHING`
 	if len(calFull) > 0 {
 		q = fmt.Sprintf(q0, "canonical_fulls", strings.Join(calFull, ","))
 		if _, err = db.Query(q); err != nil {
@@ -236,9 +231,9 @@ func (rb Rebuild) workerNameString(kv *badger.DB, chIn <-chan []string,
 				canData.FullID = canonicalFullID.String
 				canData.FullValue = val
 			}
-			// Stems used for fuzzy matching, and we do not fuzzy match uninomials.
-			// if p.Cardinality > 1 {
-			if p.Cardinality > 1 {
+			// Save stems of uninomials as well, we will use them for
+			// exact matching to remove false positives from bloom filters.
+			if p.Cardinality > 0 && !strings.Contains(canData.Value, ".") {
 				val = p.Canonical.GetStem()
 				canonicalStemID = sql.NullString{
 					String: gnuuid.New(val).String(),

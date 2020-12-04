@@ -89,8 +89,6 @@ type Canonical struct {
 	ID string `gorm:"type:uuid;primary_key;auto_increment:false"`
 	// Canonical name-string
 	Name string `gorm:"type:varchar(255);not_null"`
-	// NameStem is a stemmed version of the canonical form.
-	NameStem string `gorm:"type:varchar(255);not_null;index:canonical_canonical_stem"`
 }
 
 // CanonicalFull ia a full canonical form.
