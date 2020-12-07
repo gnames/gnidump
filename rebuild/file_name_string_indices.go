@@ -16,6 +16,7 @@ import (
 	badger "github.com/dgraph-io/badger/v2"
 	"github.com/dustin/go-humanize"
 	"github.com/gnames/gnidump/keyval"
+	"github.com/gnames/gnlib/encode"
 	"github.com/lib/pq"
 )
 
@@ -78,7 +79,7 @@ func (rb Rebuild) dbNameStringIndices(chOut <-chan []NameStringIndex,
 
 func (rb Rebuild) saveNameStringIndices(db *sql.DB, nsi []NameStringIndex) int64 {
 	columns := []string{"data_source_id", "name_string_id", "record_id",
-		"local_id", "global_id", "code_id", "rank", "accepted_record_id",
+		"local_id", "global_id", "outlink_id", "code_id", "rank", "accepted_record_id",
 		"classification", "classification_ids", "classification_ranks"}
 	transaction, err := db.Begin()
 	if err != nil {
@@ -95,6 +96,7 @@ func (rb Rebuild) saveNameStringIndices(db *sql.DB, nsi []NameStringIndex) int64
 			v.RecordID,
 			v.LocalID,
 			v.GlobalID,
+			v.OutlinkID,
 			v.CodeID,
 			v.Rank,
 			v.AcceptedRecordID,
@@ -125,6 +127,7 @@ func (rb Rebuild) saveNameStringIndices(db *sql.DB, nsi []NameStringIndex) int64
 func (rb Rebuild) workerNameStringIndex(kv *badger.DB, chIn <-chan []string,
 	chOut chan<- []NameStringIndex, wg *sync.WaitGroup) {
 	defer wg.Done()
+	enc := encode.GNgob{}
 	res := make([]NameStringIndex, rb.Batch)
 	i := 0
 	for row := range chIn {
@@ -136,9 +139,15 @@ func (rb Rebuild) workerNameStringIndex(kv *badger.DB, chIn <-chan []string,
 		if err != nil {
 			codeID = 0
 		}
+		var parsed ParsedData
+		parsedBytes := keyval.GetValue(kv, row[nsiNameStringIDF])
+		err = enc.Decode(parsedBytes, &parsed)
+		if err != nil {
+			log.Fatal(err)
+		}
 		dsi := NameStringIndex{
 			DataSourceID:        dsID,
-			NameStringID:        keyval.GetValue(kv, row[nsiNameStringIDF]),
+			NameStringID:        parsed.ID,
 			RecordID:            row[nsiTaxonIDF],
 			LocalID:             row[nsiLocalIDF],
 			GlobalID:            row[nsiGlobalIDF],
@@ -148,6 +157,17 @@ func (rb Rebuild) workerNameStringIndex(kv *badger.DB, chIn <-chan []string,
 			Classification:      row[nsiClassificationF],
 			ClassificationIDs:   row[nsiClassificationIDsF],
 			ClassificationRanks: row[nsiClassificationRanksF],
+		}
+		nInf := NameInf{
+			RecordID:         dsi.RecordID,
+			AcceptedRecordID: dsi.AcceptedRecordID,
+			LocalID:          dsi.LocalID,
+			GlobalID:         dsi.GlobalID,
+			Canonical:        parsed.CanonicalSimple,
+			CanonicalFull:    parsed.CanonicalFull,
+		}
+		if dInf, ok := DataSourcesInf[dsID]; ok && dInf.OutlinkID != nil {
+			dsi.OutlinkID = dInf.OutlinkID(nInf)
 		}
 		if i < rb.Batch {
 			res[i] = dsi

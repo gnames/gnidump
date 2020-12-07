@@ -15,6 +15,7 @@ import (
 	badger "github.com/dgraph-io/badger/v2"
 	"github.com/dustin/go-humanize"
 	"github.com/gnames/gnidump/keyval"
+	"github.com/gnames/gnlib/encode"
 	"github.com/gnames/gnlib/gnuuid"
 	"github.com/lib/pq"
 	"gitlab.com/gogna/gnparser"
@@ -181,10 +182,17 @@ func (rb Rebuild) saveNameStrings(db *sql.DB, ns []NameString) int64 {
 	return int64(len(ns))
 }
 
+type ParsedData struct {
+	ID              string
+	CanonicalSimple string
+	CanonicalFull   string
+}
+
 func (rb Rebuild) workerNameString(kv *badger.DB, chIn <-chan []string,
 	chCan chan<- []CanonicalData, chOut chan<- []NameString, wg *sync.WaitGroup) {
 	var err error
 	defer wg.Done()
+	enc := encode.GNgob{}
 	kvTxn := kv.NewTransaction(true)
 
 	gnp := gnparser.NewGNparser()
@@ -195,14 +203,29 @@ func (rb Rebuild) workerNameString(kv *badger.DB, chIn <-chan []string,
 		id := row[nsIDF]
 		p := gnp.ParseToObject(row[nsNameF])
 		key := id
-		val := p.Id
-		if err = kvTxn.Set([]byte(key), []byte(val)); err == badger.ErrTxnTooBig {
+
+		var can, canf string
+		if p.Parsed {
+			can = p.Canonical.Simple
+			canf = p.Canonical.Full
+		}
+		val := ParsedData{
+			ID:              p.Id,
+			CanonicalSimple: can,
+			CanonicalFull:   canf,
+		}
+
+		valBytes, err := enc.Encode(val)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if err = kvTxn.Set([]byte(key), []byte(valBytes)); err == badger.ErrTxnTooBig {
 			err = kvTxn.Commit()
 			if err != nil {
 				log.Fatal(err)
 			}
 			kvTxn = kv.NewTransaction(true)
-			err = kvTxn.Set([]byte(key), []byte(val))
+			err = kvTxn.Set([]byte(key), []byte(valBytes))
 			if err != nil {
 				log.Fatal(err)
 			}

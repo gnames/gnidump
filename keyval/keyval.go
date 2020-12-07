@@ -20,7 +20,7 @@ func InitKeyVal(dir string) *badger.DB {
 }
 
 // GetValue gets a value for a key in a key-value store.
-func GetValue(kv *badger.DB, key string) string {
+func GetValue(kv *badger.DB, key string) []byte {
 	txn := kv.NewTransaction(false)
 	defer func() {
 		err := txn.Commit()
@@ -32,7 +32,7 @@ func GetValue(kv *badger.DB, key string) string {
 	if err == badger.ErrKeyNotFound {
 		log.Printf("%s not found", key)
 		// log.Fatal(err)
-		return ""
+		return nil
 	} else if err != nil {
 		log.Fatal(err)
 	}
@@ -41,7 +41,7 @@ func GetValue(kv *badger.DB, key string) string {
 	if err != nil {
 		log.Fatal(err)
 	}
-	return string(res)
+	return res
 }
 
 // ResetKeyVal cleans key-value store from old data.

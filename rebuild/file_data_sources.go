@@ -2,7 +2,6 @@ package rebuild
 
 import (
 	"encoding/csv"
-	"github.com/gnames/gnidump/str"
 	"io"
 	"log"
 	"net/url"
@@ -10,6 +9,8 @@ import (
 	"path/filepath"
 	"strconv"
 	"time"
+
+	"github.com/gnames/gnidump/str"
 )
 
 // List of fields indices for data sources CSV file. The value corresponds to
@@ -28,7 +29,9 @@ const (
 
 // DataSourceInf provides fields associated with a DataSource
 type DataSourceInf struct {
+	Title          string
 	TitleShort     string
+	Description    string
 	UUID           string
 	HomeURL        string
 	DataURL        string
@@ -51,6 +54,7 @@ type NameInf struct {
 // DataSourcesInf provides missing data for data_sources table.
 var DataSourcesInf = map[int]DataSourceInf{
 	1: {
+		Title:          "Catalogue of Life",
 		TitleShort:     "Catalogue of Life",
 		UUID:           "d4df2968-4257-4ad9-ab81-bedbbfb25e2a",
 		HomeURL:        "https://www.catalogueoflife.org/",
@@ -70,6 +74,7 @@ var DataSourcesInf = map[int]DataSourceInf{
 			"specieswiki-latest-pages-articles.xml.bz2",
 	},
 	3: {
+		Title:          "Integrated Taxonomic Information System",
 		TitleShort:     "ITIS",
 		UUID:           "5d066e84-e512-4a2f-875c-0a605d3d9f35",
 		HomeURL:        "https://www.itis.gov/",
@@ -81,6 +86,7 @@ var DataSourcesInf = map[int]DataSourceInf{
 		},
 	},
 	4: {
+		Title:          "National Center for Biotechnology Information",
 		TitleShort:     "NCBI",
 		UUID:           "97d7633b-5f79-4307-a397-3c29402d9311",
 		HomeURL:        "https://www.ncbi.nlm.nih.gov/",
@@ -108,6 +114,7 @@ var DataSourcesInf = map[int]DataSourceInf{
 		UUID:       "bacd21f0-44e0-43e2-914c-70929916f257",
 	},
 	11: {
+		Title:          "Global Biodiversity Information Facility Backbone Taxonomy",
 		TitleShort:     "GBIF Backbone Taxonomy",
 		UUID:           "eebb6f49-e1a1-4f42-b9d5-050844c893cd",
 		IsOutlinkReady: true,
@@ -124,11 +131,39 @@ var DataSourcesInf = map[int]DataSourceInf{
 			return n.RecordID
 		},
 	},
+	113: {
+		Title:      "Zoological names",
+		TitleShort: "Zoological names",
+	},
+	117: {
+		Title:      "Birds of Tansania",
+		TitleShort: "Birds of Tansania",
+	},
+	119: {
+		Title:      "Tansania Plant Specimens",
+		TitleShort: "Tansania Plant Specimens",
+	},
+	142: {
+		Title:      "The Clements Checklist of Birds of the World",
+		TitleShort: "The Clements Checklist of Birds",
+	},
+	147: {
+		TitleShort: "VASCAN",
+	},
+	149: {
+		Title: "Ocean Biodiversity Information System",
+	},
 	155: {
 		TitleShort:     "FishBase",
 		UUID:           "bacd21f0-44e0-43e2-914c-70929916f257",
 		IsOutlinkReady: true,
 		HomeURL:        "https://www.fishbase.in/home.htm",
+	},
+	165: {
+		Description: "The Tropicos database links over 1.33M scientific names " +
+			"with over 4.87M specimens and over 685K digital images. The data " +
+			"includes over 150K references from over 52.6K publications offered " +
+			"as a free service to the world’s scientific community.",
 	},
 	167: {
 		TitleShort:     "IPNI",
@@ -155,6 +190,10 @@ var DataSourcesInf = map[int]DataSourceInf{
 		UUID:           "eea8315d-a244-4625-859a-226675622312",
 		HomeURL:        "https://arctosdb.org/",
 		IsOutlinkReady: true,
+		OutlinkURL:     "https://arctos.database.museum/name/{}",
+		OutlinkID: func(n NameInf) string {
+			return url.QueryEscape(n.Canonical)
+		},
 	},
 	172: {
 		TitleShort:     "PaleoBioDB",
@@ -319,7 +358,6 @@ func (rb Rebuild) loadDataSources() ([]DataSource, error) {
 func rowToDataSource(row []string) (DataSource, error) {
 	res := DataSource{}
 	id, err := strconv.Atoi(row[dsIDF])
-	title := row[dsTitleF]
 	if err != nil {
 		return res, err
 	}
@@ -329,9 +367,17 @@ func rowToDataSource(row []string) (DataSource, error) {
 		return res, err
 	}
 
+	title := row[dsTitleF]
 	info := DataSourceInf{UUID: "00000000-0000-0000-0000-000000000000", TitleShort: str.ShortTitle(title)}
 	if data, ok := DataSourcesInf[id]; ok {
 		info = data
+	}
+	if info.Title != "" {
+		title = info.Title
+	}
+	description := row[dsDescF]
+	if info.Description != "" {
+		description = info.Description
 	}
 
 	res = DataSource{
@@ -339,7 +385,7 @@ func rowToDataSource(row []string) (DataSource, error) {
 		UUID:           info.UUID,
 		Title:          title,
 		TitleShort:     info.TitleShort,
-		Description:    row[dsDescF],
+		Description:    description,
 		WebsiteURL:     info.HomeURL,
 		DataURL:        info.DataURL,
 		IsOutlinkReady: info.IsOutlinkReady,
@@ -349,5 +395,6 @@ func rowToDataSource(row []string) (DataSource, error) {
 		RecordCount:    recNum,
 		UpdatedAt:      updateAt,
 	}
+
 	return res, nil
 }
