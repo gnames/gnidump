@@ -64,7 +64,7 @@ type NameString struct {
 	// Name-string with authorships and annotations as it is given by a dataset.
 	// Sometimes an authorship is concatenated with a name-string by our
 	// import scripts.
-	Name string `gorm:"type:varchar(255);not_null"`
+	Name string `gorm:"type:varchar(255);not null"`
 	// Number of elements in a 'classic' Linnaen name: 0 - unknown, not available,
 	// 1 - uninomial, 2 - binomial, 3 - trinomial etc.
 	// Cardinality can be used to filter out surrogates and hybrid formulas --
@@ -81,6 +81,9 @@ type NameString struct {
 	Virus bool `gorm:"type:bool"`
 	// Surrogate indicates if a name-string is a surrogate name.
 	Surrogate bool `gorm:"type:bool"`
+	// ParseQuality is numeric representation of the quality of parsing.
+	// 0 - no parse, 1 - clear parse, 2 - some problems, 3 - big problems.
+	ParseQuality int `gorm:"type:int;not null;default:0"`
 }
 
 // Canonical is a 'simple' canonical form.
@@ -88,7 +91,7 @@ type Canonical struct {
 	// UUID v5 generated for simple canonical form.
 	ID string `gorm:"type:uuid;primary_key;auto_increment:false"`
 	// Canonical name-string
-	Name string `gorm:"type:varchar(255);not_null"`
+	Name string `gorm:"type:varchar(255);not null"`
 }
 
 // CanonicalFull ia a full canonical form.
@@ -97,7 +100,7 @@ type CanonicalFull struct {
 	// and hybrid signs for named hybrids).
 	ID string `gorm:"type:uuid;primary_key;auto_increment:false"`
 	// Canonical name-string
-	Name string `gorm:"type:varchar(255);not_null"`
+	Name string `gorm:"type:varchar(255);not null"`
 }
 
 // CanonicalStem is a stemmed derivative of a simple canonical form.
@@ -105,7 +108,7 @@ type CanonicalStem struct {
 	// UUID v5 for the stemmed derivative of a simple canonical form.
 	ID string `gorm:"type:uuid;primary_key;auto_increment:false"`
 	// Stemmed canonical name-string
-	Name string `gorm:"type:varchar(255);not_null"`
+	Name string `gorm:"type:varchar(255);not null"`
 }
 
 // NameStringIndex is a name-strings relations to datasets.
