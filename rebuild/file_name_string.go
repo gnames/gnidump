@@ -150,7 +150,7 @@ func (rb Rebuild) saveCanonicals(cs []CanonicalData) {
 
 func (rb Rebuild) saveNameStrings(db *sql.DB, ns []NameString) int64 {
 	columns := []string{"id", "name", "cardinality", "canonical_id",
-		"canonical_full_id", "canonical_stem_id", "virus", "surrogate",
+		"canonical_full_id", "canonical_stem_id", "virus", "bacteria", "surrogate",
 		"parse_quality"}
 	transaction, err := db.Begin()
 	if err != nil {
@@ -162,7 +162,7 @@ func (rb Rebuild) saveNameStrings(db *sql.DB, ns []NameString) int64 {
 	}
 	for _, v := range ns {
 		_, err = stmt.Exec(v.ID, v.Name, v.Cardinality, v.CanonicalID,
-			v.CanonicalFullID, v.CanonicalStemID, v.Virus, v.Surrogate,
+			v.CanonicalFullID, v.CanonicalStemID, v.Virus, v.Bacteria, v.Surrogate,
 			v.ParseQuality)
 	}
 	if err != nil {
@@ -270,9 +270,13 @@ func (rb Rebuild) workerNameString(kv *badger.DB, chIn <-chan []string,
 			cans = append(cans, canData)
 		}
 
-		var virus bool
+		var bacteria, virus bool
 		if p.NameType == pb.NameType_VIRUS {
 			virus = true
+		}
+
+		if p.Bacteria {
+			bacteria = true
 		}
 
 		var surrogate bool
@@ -288,6 +292,7 @@ func (rb Rebuild) workerNameString(kv *badger.DB, chIn <-chan []string,
 			CanonicalFullID: canonicalFullID,
 			CanonicalStemID: canonicalStemID,
 			Virus:           virus,
+			Bacteria:        bacteria,
 			Surrogate:       surrogate,
 			ParseQuality:    int(p.Quality),
 		}

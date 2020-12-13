@@ -286,8 +286,8 @@ SELECT nsi.data_source_id, nsi.record_id, nsi.name_string_id, ns.name
       ON nsi.name_string_id = ns.id
 )
 SELECT nsi.data_source_id, nsi.record_id, nsi.name_string_id,
-  ns.name, ns.cardinality, ns.canonical_id, ns.parse_quality,
-  nsi.local_id, nsi.outlink_id, nsi.accepted_record_id,
+  ns.name, ns.cardinality, ns.canonical_id, ns.virus, ns.bacteria,
+  ns.parse_quality, nsi.local_id, nsi.outlink_id, nsi.accepted_record_id,
   tn.name_string_id as accepted_name_id,
   tn.name as accepted_name, nsi.classification, nsi.classification_ranks
   FROM name_string_indices nsi
@@ -295,7 +295,12 @@ SELECT nsi.data_source_id, nsi.record_id, nsi.name_string_id,
     LEFT JOIN taxon_names tn
       ON nsi.data_source_id = tn.data_source_id AND
          nsi.accepted_record_id = tn.record_id
-  WHERE (ns.canonical_id is not NULL AND surrogate != TRUE) OR ns.virus = TRUE`
+  WHERE
+    (
+      ns.canonical_id is not NULL AND
+      surrogate != TRUE AND
+      (bacteria != TRUE OR parse_quality < 3)
+    ) OR ns.virus = TRUE`
 	_, err := db.Exec("DROP MATERIALIZED VIEW IF EXISTS verification")
 	if err != nil {
 		log.Printf("verificationView")

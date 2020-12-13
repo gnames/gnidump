@@ -79,6 +79,8 @@ type NameString struct {
 	CanonicalStemID sql.NullString `gorm:"type:uuid;index:canonical_stem"`
 	// Virus indicates if a name-string seems to be virus-like.
 	Virus bool `gorm:"type:bool"`
+	// Bacteria is true if parser marks a name as from Bactrial Code.
+	Bacteria bool `gorm:"type:bool;not null;default:false"`
 	// Surrogate indicates if a name-string is a surrogate name.
 	Surrogate bool `gorm:"type:bool"`
 	// ParseQuality is numeric representation of the quality of parsing.
