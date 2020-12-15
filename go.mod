@@ -15,5 +15,5 @@ require (
 	github.com/satori/go.uuid v1.2.0
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/viper v1.6.2
-	gitlab.com/gogna/gnparser v0.14.4-0.20201214111716-8a01b7019064
+	gitlab.com/gogna/gnparser v0.14.4
 )
