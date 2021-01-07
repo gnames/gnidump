@@ -98,6 +98,17 @@ var DataSourcesInf = map[int]DataSourceInf{
 			return url.PathEscape(n.Canonical)
 		},
 	},
+	5: {
+		Title:          "Index Fungorum: Species Fungorum",
+		TitleShort:     "Index Fungorum",
+		UUID:           "af06816a-0b28-4a09-8219-bd1d63289858",
+		HomeURL:        "http://www.speciesfungorum.org",
+		IsOutlinkReady: true,
+		OutlinkURL:     "http://www.indexfungorum.org/Names/NamesRecord.asp?RecordID={}",
+		OutlinkID: func(n NameInf) string {
+			return n.RecordID
+		},
+	},
 	8: {
 		TitleShort: "IRMNG (old)",
 		UUID:       "f8e586aa-876e-4b0a-ab89-da0b4a64c19a",
