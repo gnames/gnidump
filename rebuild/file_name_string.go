@@ -17,9 +17,9 @@ import (
 	"github.com/gnames/gnidump/keyval"
 	"github.com/gnames/gnlib/encode"
 	"github.com/gnames/gnlib/gnuuid"
+	"github.com/gnames/gnparser"
+	"github.com/gnames/gnparser/config"
 	"github.com/lib/pq"
-	"gitlab.com/gogna/gnparser"
-	"gitlab.com/gogna/gnparser/pb"
 )
 
 // List of fields from name-strings CSV file. The value correspondes to the
@@ -197,13 +197,14 @@ func (rb Rebuild) workerNameString(kv *badger.DB, chIn <-chan []string,
 	enc := encode.GNgob{}
 	kvTxn := kv.NewTransaction(true)
 
-	gnp := gnparser.NewGNparser()
+	cfg := config.NewConfig()
+	gnp := gnparser.NewGNParser(cfg)
 	res := make([]NameString, rb.Batch)
 	cans := make([]CanonicalData, 0, rb.Batch)
 	i := 0
 	for row := range chIn {
 		id := row[nsIDF]
-		p := gnp.ParseToObject(row[nsNameF])
+		p := gnp.ParseName(row[nsNameF])
 		key := id
 
 		var can, canf string
@@ -212,7 +213,7 @@ func (rb Rebuild) workerNameString(kv *badger.DB, chIn <-chan []string,
 			canf = p.Canonical.Full
 		}
 		val := ParsedData{
-			ID:              p.Id,
+			ID:              p.VerbatimID,
 			CanonicalSimple: can,
 			CanonicalFull:   canf,
 		}
@@ -237,18 +238,18 @@ func (rb Rebuild) workerNameString(kv *badger.DB, chIn <-chan []string,
 		var cardinality sql.NullInt32
 		if p.Parsed {
 			cardinality = sql.NullInt32{
-				Int32: p.Cardinality,
+				Int32: int32(p.Cardinality),
 				Valid: true,
 			}
-			val := p.Canonical.GetSimple()
+			val := p.Canonical.Simple
 			canonicalID = sql.NullString{
 				String: gnuuid.New(val).String(),
 				Valid:  true,
 			}
 			canData := CanonicalData{ID: canonicalID.String, Value: val, Cardinality: int(p.Cardinality)}
 
-			if p.Canonical.GetSimple() != p.Canonical.GetFull() {
-				val = p.Canonical.GetFull()
+			if p.Canonical.Simple != p.Canonical.Full {
+				val = p.Canonical.Full
 				canonicalFullID = sql.NullString{
 					String: gnuuid.New(val).String(),
 					Valid:  true,
@@ -259,7 +260,7 @@ func (rb Rebuild) workerNameString(kv *badger.DB, chIn <-chan []string,
 			// Save stems of uninomials as well, we will use them for
 			// exact matching to remove false positives from bloom filters.
 			if p.Cardinality > 0 && !strings.Contains(canData.Value, ".") {
-				val = p.Canonical.GetStem()
+				val = p.Canonical.Stemmed
 				canonicalStemID = sql.NullString{
 					String: gnuuid.New(val).String(),
 					Valid:  true,
@@ -271,21 +272,20 @@ func (rb Rebuild) workerNameString(kv *badger.DB, chIn <-chan []string,
 		}
 
 		var bacteria, virus bool
-		if p.NameType == pb.NameType_VIRUS {
+		if p.Virus {
 			virus = true
 		}
 
-		if p.Bacteria {
+		if p.Bacteria != nil && p.Bacteria.String() == "yes" {
 			bacteria = true
 		}
 
 		var surrogate bool
-		if p.NameType == pb.NameType_SURROGATE ||
-			p.NameType == pb.NameType_APPROX_SURROGATE {
+		if p.Surrogate != nil {
 			surrogate = true
 		}
 		n := NameString{
-			ID:              p.Id,
+			ID:              p.VerbatimID,
 			Name:            p.Verbatim,
 			Cardinality:     cardinality,
 			CanonicalID:     canonicalID,
@@ -294,7 +294,7 @@ func (rb Rebuild) workerNameString(kv *badger.DB, chIn <-chan []string,
 			Virus:           virus,
 			Bacteria:        bacteria,
 			Surrogate:       surrogate,
-			ParseQuality:    int(p.Quality),
+			ParseQuality:    int(p.ParseQuality),
 		}
 		if i < rb.Batch {
 			res[i] = n
