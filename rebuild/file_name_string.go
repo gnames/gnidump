@@ -197,8 +197,8 @@ func (rb Rebuild) workerNameString(kv *badger.DB, chIn <-chan []string,
 	enc := encode.GNgob{}
 	kvTxn := kv.NewTransaction(true)
 
-	cfg := config.NewConfig()
-	gnp := gnparser.NewGNParser(cfg)
+	cfg := config.New()
+	gnp := gnparser.New(cfg)
 	res := make([]NameString, rb.Batch)
 	cans := make([]CanonicalData, 0, rb.Batch)
 	i := 0
