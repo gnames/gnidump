@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gnames/gnidump/str"
@@ -72,6 +73,10 @@ var DataSourcesInf = map[int]DataSourceInf{
 		IsOutlinkReady: true,
 		DataURL: "http://dumps.wikimedia.org/specieswiki/latest/" +
 			"specieswiki-latest-pages-articles.xml.bz2",
+		OutlinkURL: "http://species.wikimedia.org/wiki/{}",
+		OutlinkID: func(n NameInf) string {
+			return strings.ReplaceAll(n.CanonicalFull, " ", "_")
+		},
 	},
 	3: {
 		Title:          "Integrated Taxonomic Information System",
