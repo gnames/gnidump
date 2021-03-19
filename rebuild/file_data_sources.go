@@ -320,6 +320,17 @@ var DataSourcesInf = map[int]DataSourceInf{
 		IsOutlinkReady: true,
 		DataURL:        "https://www.howardandmoore.org/howard-and-moore-database/",
 	},
+	194: {
+		TitleShort:     "Plazi",
+		UUID:           "68938dc9-b93d-43bc-9d51-5c2a632f136f",
+		HomeURL:        "https://www.plazi.org/",
+		IsOutlinkReady: true,
+		DataURL:        "http://tb.plazi.org/GgServer/xml.rss.xml",
+		OutlinkURL:     "http://tb.plazi.org/GgServer/html/{}",
+		OutlinkID: func(n NameInf) string {
+			return n.LocalID
+		},
+	},
 }
 
 // UploadDataSources populates data_sources table with data.
