@@ -3,7 +3,7 @@ package gnidump
 import (
 	"fmt"
 	"github.com/gnames/gnidump/rebuild"
-	"github.com/gnames/gnlib/sys"
+	"github.com/gnames/gnsys"
 	"log"
 )
 
@@ -17,7 +17,7 @@ func (gnd GNIdump) PopulatePG() error {
 		return fmt.Errorf("Cannot rebuild DB schema: %w", err)
 	}
 	rb := rebuild.NewRebuild(gnd.PgDB, gnd.InputDir, gnd.JobsNum)
-	if err = sys.MakeDir(rb.ParserKeyValDir); err != nil {
+	if err = gnsys.MakeDir(rb.ParserKeyValDir); err != nil {
 		return err
 	}
 	if err = rb.UploadNameString(); err != nil {

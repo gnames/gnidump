@@ -15,8 +15,8 @@ import (
 
 	badger "github.com/dgraph-io/badger/v2"
 	"github.com/dustin/go-humanize"
+	"github.com/gnames/gnfmt"
 	"github.com/gnames/gnidump/keyval"
-	"github.com/gnames/gnlib/encode"
 	"github.com/lib/pq"
 )
 
@@ -127,7 +127,7 @@ func (rb Rebuild) saveNameStringIndices(db *sql.DB, nsi []NameStringIndex) int64
 func (rb Rebuild) workerNameStringIndex(kv *badger.DB, chIn <-chan []string,
 	chOut chan<- []NameStringIndex, wg *sync.WaitGroup) {
 	defer wg.Done()
-	enc := encode.GNgob{}
+	enc := gnfmt.GNgob{}
 	res := make([]NameStringIndex, rb.Batch)
 	i := 0
 	for row := range chIn {

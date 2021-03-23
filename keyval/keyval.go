@@ -4,7 +4,7 @@ import (
 	"log"
 
 	"github.com/dgraph-io/badger/v2"
-	"github.com/gnames/gnlib/sys"
+	"github.com/gnames/gnsys"
 )
 
 // InitKeyVal --- InitBadger finds and initializes connection to a badger
@@ -46,5 +46,5 @@ func GetValue(kv *badger.DB, key string) []byte {
 
 // ResetKeyVal cleans key-value store from old data.
 func ResetKeyVal(dir string) error {
-	return sys.CleanDir(dir)
+	return gnsys.CleanDir(dir)
 }

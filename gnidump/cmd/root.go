@@ -28,7 +28,7 @@ import (
 	"path/filepath"
 
 	"github.com/gnames/gnidump"
-	"github.com/gnames/gnlib/sys"
+	"github.com/gnames/gnsys"
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -219,7 +219,8 @@ func getOpts() []gnidump.Option {
 
 // touchConfigFile checks if config file exists, and if not, it gets created.
 func touchConfigFile(configPath string, configFile string) {
-	if sys.FileExists(configPath) {
+	fileExists, _ := gnsys.FileExists(configPath)
+	if fileExists {
 		return
 	}
 
@@ -229,7 +230,7 @@ func touchConfigFile(configPath string, configFile string) {
 
 // createConfig creates config file.
 func createConfig(path string, file string) {
-	err := sys.MakeDir(filepath.Dir(path))
+	err := gnsys.MakeDir(filepath.Dir(path))
 	if err != nil {
 		log.Fatal(err)
 	}

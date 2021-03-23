@@ -14,11 +14,10 @@ import (
 
 	badger "github.com/dgraph-io/badger/v2"
 	"github.com/dustin/go-humanize"
+	"github.com/gnames/gnfmt"
 	"github.com/gnames/gnidump/keyval"
-	"github.com/gnames/gnlib/encode"
-	"github.com/gnames/gnlib/gnuuid"
 	"github.com/gnames/gnparser"
-	"github.com/gnames/gnparser/config"
+	"github.com/gnames/gnuuid"
 	"github.com/lib/pq"
 )
 
@@ -194,10 +193,10 @@ func (rb Rebuild) workerNameString(kv *badger.DB, chIn <-chan []string,
 	chCan chan<- []CanonicalData, chOut chan<- []NameString, wg *sync.WaitGroup) {
 	var err error
 	defer wg.Done()
-	enc := encode.GNgob{}
+	enc := gnfmt.GNgob{}
 	kvTxn := kv.NewTransaction(true)
 
-	cfg := config.New()
+	cfg := gnparser.NewConfig()
 	gnp := gnparser.New(cfg)
 	res := make([]NameString, rb.Batch)
 	cans := make([]CanonicalData, 0, rb.Batch)
