@@ -331,6 +331,16 @@ var DataSourcesInf = map[int]DataSourceInf{
 			return n.LocalID
 		},
 	},
+	195: {
+		TitleShort:     "AlgaeBase",
+		UUID:           "a5869bfb-7cbf-40f2-88d3-962922dac43f",
+		HomeURL:        "https://www.algaebase.org/",
+		IsOutlinkReady: true,
+		OutlinkURL:     "https://www.algaebase.org/search/species/detail/?species_id={}",
+		OutlinkID: func(n NameInf) string {
+			return n.RecordID
+		},
+	},
 }
 
 // UploadDataSources populates data_sources table with data.
