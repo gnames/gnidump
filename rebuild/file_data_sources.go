@@ -61,9 +61,9 @@ var DataSourcesInf = map[int]DataSourceInf{
 		HomeURL:        "https://www.catalogueoflife.org/",
 		DataURL:        "http://www.catalogueoflife.org/DCA_Export/archive.php",
 		IsOutlinkReady: true,
-		OutlinkURL:     "http://www.catalogueoflife.org/annual-checklist/2019/details/species/id/{}",
+		OutlinkURL:     "https://www.catalogueoflife.org/data/taxon/{}",
 		OutlinkID: func(n NameInf) string {
-			return n.LocalID
+			return n.RecordID
 		},
 	},
 	2: {
