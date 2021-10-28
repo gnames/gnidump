@@ -167,7 +167,8 @@ var DataSourcesInf = map[int]DataSourceInf{
 		TitleShort: "VASCAN",
 	},
 	149: {
-		Title: "Ocean Biodiversity Information System",
+		Title:      "Ocean Biodiversity Information System",
+		TitleShort: "OBIS",
 	},
 	155: {
 		TitleShort:     "FishBase",
@@ -176,6 +177,7 @@ var DataSourcesInf = map[int]DataSourceInf{
 		HomeURL:        "https://www.fishbase.in/home.htm",
 	},
 	165: {
+		TitleShort: "Tropicos",
 		Description: "The Tropicos database links over 1.33M scientific names " +
 			"with over 4.87M specimens and over 685K digital images. The data " +
 			"includes over 150K references from over 52.6K publications offered " +
@@ -405,12 +407,15 @@ func rowToDataSource(row []string) (DataSource, error) {
 	}
 
 	title := row[dsTitleF]
-	info := DataSourceInf{UUID: "00000000-0000-0000-0000-000000000000", TitleShort: str.ShortTitle(title)}
+	info := DataSourceInf{UUID: "00000000-0000-0000-0000-000000000000"}
 	if data, ok := DataSourcesInf[id]; ok {
 		info = data
 	}
 	if info.Title != "" {
 		title = info.Title
+	}
+	if info.TitleShort == "" {
+		info.TitleShort = str.ShortTitle(title)
 	}
 	description := row[dsDescF]
 	if info.Description != "" {
