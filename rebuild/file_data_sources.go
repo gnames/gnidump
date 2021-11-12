@@ -182,6 +182,11 @@ var DataSourcesInf = map[int]DataSourceInf{
 			"with over 4.87M specimens and over 685K digital images. The data " +
 			"includes over 150K references from over 52.6K publications offered " +
 			"as a free service to the world’s scientific community.",
+		IsOutlinkReady: true,
+		OutlinkURL:     "https://tropicos.org/name/{}",
+		OutlinkID: func(n NameInf) string {
+			return n.RecordID
+		},
 	},
 	167: {
 		TitleShort:     "IPNI",
