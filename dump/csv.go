@@ -40,6 +40,7 @@ func (dmp Dump) CreateCSV() error {
 	if err != nil {
 		return err
 	}
+
 	log.Println("CSV dump is created")
 	return dmp.DB.Close()
 }

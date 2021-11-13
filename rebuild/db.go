@@ -71,6 +71,8 @@ func (pdb PgDB) Migrate() error {
 		&CanonicalFull{},
 		&CanonicalStem{},
 		&NameStringIndex{},
+		&Word{},
+		&WordNameString{},
 	)
 	if db.Error != nil {
 		return db.Error

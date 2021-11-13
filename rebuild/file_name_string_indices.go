@@ -71,10 +71,7 @@ func (rb Rebuild) dbNameStringIndices(chOut <-chan []NameStringIndex,
 		fmt.Printf("\rUploaded %s indices, %s names/sec",
 			humanize.Comma(total), humanize.Comma(speed))
 	}
-	fmt.Println()
 	log.Println("Uploaded name_string_indices table")
-	rb.removeOrphans(db)
-	rb.verificationView(db)
 }
 
 func (rb Rebuild) saveNameStringIndices(db *sql.DB, nsi []NameStringIndex) int64 {
@@ -209,7 +206,9 @@ func (rb Rebuild) loadNameStringIndices(chIn chan<- []string) {
 	close(chIn)
 }
 
-func (rb Rebuild) removeOrphans(db *sql.DB) {
+func (rb Rebuild) RemoveOrphans() {
+	db := rb.PgDB.NewDb()
+	defer db.Close()
 	log.Println("Removing orphan name-strings")
 	q := `DELETE FROM name_strings
   WHERE id IN (
@@ -276,7 +275,9 @@ func (rb Rebuild) removeOrphans(db *sql.DB) {
 }
 
 // verificationView creates data for a materialized view.
-func (rb Rebuild) verificationView(db *sql.DB) {
+func (rb Rebuild) VerificationView() {
+	db := rb.PgDB.NewDb()
+	defer db.Close()
 	log.Println("Building verification view, it will take some time...")
 	viewQuery := `CREATE MATERIALIZED VIEW verification AS
 WITH taxon_names AS (
