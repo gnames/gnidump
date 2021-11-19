@@ -73,13 +73,17 @@ func processParsedWords(gnp gnparser.GNparser, names []string) ([]Word, []WordNa
 	words := make([]Word, 0, len(names)*5)
 	ps := gnp.ParseNames(names)
 	for i := range ps {
+		if !ps[i].Parsed || ps[i].Surrogate != nil || ps[i].Hybrid != nil {
+			continue
+		}
 		nsID := ps[i].VerbatimID
+		cID := gnuuid.New(ps[i].Canonical.Simple).String()
 		for _, v := range ps[i].Words {
 			wt := v.Type
 			mod := parsed.NormalizeByType(v.Normalized, wt)
 			idstr := fmt.Sprintf("%s|%d", mod, int(wt))
 			wordID := gnuuid.New(idstr).String()
-			nw := WordNameString{NameStringID: nsID, WordID: wordID}
+			nw := WordNameString{NameStringID: nsID, CanonicalID: cID, WordID: wordID}
 			word := Word{
 				ID:         wordID,
 				Normalized: v.Normalized,
@@ -97,7 +101,7 @@ func (rb Rebuild) saveNameWords(wns []WordNameString) {
 	db := rb.NewDb()
 	defer db.Close()
 	wns = uniqWordNameString(wns)
-	columns := []string{"word_id", "name_string_id"}
+	columns := []string{"word_id", "name_string_id", "canonical_id"}
 	transaction, err := db.Begin()
 	if err != nil {
 		log.Fatal(err)
@@ -107,7 +111,7 @@ func (rb Rebuild) saveNameWords(wns []WordNameString) {
 		log.Fatal(err)
 	}
 	for _, v := range wns {
-		_, err = stmt.Exec(v.WordID, v.NameStringID)
+		_, err = stmt.Exec(v.WordID, v.NameStringID, v.CanonicalID)
 	}
 	if err != nil {
 		log.Fatal(err)

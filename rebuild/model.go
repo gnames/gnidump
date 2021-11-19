@@ -93,7 +93,7 @@ type Canonical struct {
 	// UUID v5 generated for simple canonical form.
 	ID string `gorm:"type:uuid;primary_key;auto_increment:false"`
 	// Canonical name-string
-	Name string `gorm:"type:varchar(255);not null"`
+	Name string `gorm:"type:varchar(255);index:canonical_name;not null"`
 }
 
 // CanonicalFull ia a full canonical form.
@@ -165,4 +165,6 @@ type WordNameString struct {
 	WordID string `gorm:"primary_key;type:uuid;auto_increment:false"`
 	// NameStringID is UUID5 of a full name-string from the dataset.
 	NameStringID string `gorm:"primary_key;type:uuid;auto_increment:false"`
+	// CanonicalID is UUID5 of a simple canonical form of a name
+	CanonicalID string `gorm:"type:uuid;not_null"`
 }
