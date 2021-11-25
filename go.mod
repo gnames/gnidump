@@ -6,7 +6,7 @@ require (
 	github.com/dgraph-io/badger/v2 v2.0.1
 	github.com/dustin/go-humanize v1.0.0
 	github.com/gnames/gnfmt v0.2.0
-	github.com/gnames/gnparser v1.5.5
+	github.com/gnames/gnparser v1.5.6
 	github.com/gnames/gnsys v0.2.2
 	github.com/gnames/gnuuid v0.1.1
 	github.com/go-sql-driver/mysql v1.5.0

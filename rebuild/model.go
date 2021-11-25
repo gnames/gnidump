@@ -65,6 +65,8 @@ type NameString struct {
 	// Sometimes an authorship is concatenated with a name-string by our
 	// import scripts.
 	Name string `gorm:"type:varchar(255);not null"`
+	// Year is the year when a name was published
+	Year sql.NullInt16 `gorm:"type:int"`
 	// Number of elements in a 'classic' Linnaen name: 0 - unknown, not available,
 	// 1 - uninomial, 2 - binomial, 3 - trinomial etc.
 	// Cardinality can be used to filter out surrogates and hybrid formulas --

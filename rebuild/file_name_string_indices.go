@@ -287,7 +287,7 @@ SELECT nsi.data_source_id, nsi.record_id, nsi.name_string_id, ns.name
       ON nsi.name_string_id = ns.id
 )
 SELECT nsi.data_source_id, nsi.record_id, nsi.name_string_id,
-  ns.name, ns.cardinality, ns.canonical_id, ns.virus, ns.bacteria,
+  ns.name, ns.year, ns.cardinality, ns.canonical_id, ns.virus, ns.bacteria,
   ns.parse_quality, nsi.local_id, nsi.outlink_id, nsi.accepted_record_id,
   tn.name_string_id as accepted_name_id,
   tn.name as accepted_name, nsi.classification, nsi.classification_ranks,
@@ -320,6 +320,11 @@ SELECT nsi.data_source_id, nsi.record_id, nsi.name_string_id,
 		log.Fatal(err)
 	}
 	_, err = db.Exec("CREATE INDEX ON verification (name_string_id)")
+	if err != nil {
+		log.Printf("verificationView")
+		log.Fatal(err)
+	}
+	_, err = db.Exec("CREATE INDEX ON verification (year)")
 	if err != nil {
 		log.Printf("verificationView")
 		log.Fatal(err)

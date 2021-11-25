@@ -84,14 +84,20 @@ func processParsedWords(gnp gnparser.GNparser, names []string) ([]Word, []WordNa
 			idstr := fmt.Sprintf("%s|%d", mod, int(wt))
 			wordID := gnuuid.New(idstr).String()
 			nw := WordNameString{NameStringID: nsID, CanonicalID: cID, WordID: wordID}
-			word := Word{
-				ID:         wordID,
-				Normalized: v.Normalized,
-				Modified:   mod,
-				TypeID:     int(wt),
+			switch wt {
+			case
+				parsed.SpEpithetType,
+				parsed.InfraspEpithetType,
+				parsed.AuthorWordType:
+				word := Word{
+					ID:         wordID,
+					Normalized: v.Normalized,
+					Modified:   mod,
+					TypeID:     int(wt),
+				}
+				words = append(words, word)
+				wordNames = append(wordNames, nw)
 			}
-			words = append(words, word)
-			wordNames = append(wordNames, nw)
 		}
 	}
 	return words, wordNames

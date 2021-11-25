@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -17,6 +18,7 @@ import (
 	"github.com/gnames/gnfmt"
 	"github.com/gnames/gnidump/keyval"
 	"github.com/gnames/gnparser"
+	"github.com/gnames/gnparser/ent/parsed"
 	"github.com/gnames/gnuuid"
 	"github.com/lib/pq"
 )
@@ -148,7 +150,7 @@ func (rb Rebuild) saveCanonicals(cs []CanonicalData) {
 }
 
 func (rb Rebuild) saveNameStrings(db *sql.DB, ns []NameString) int64 {
-	columns := []string{"id", "name", "cardinality", "canonical_id",
+	columns := []string{"id", "name", "year", "cardinality", "canonical_id",
 		"canonical_full_id", "canonical_stem_id", "virus", "bacteria", "surrogate",
 		"parse_quality"}
 	transaction, err := db.Begin()
@@ -160,7 +162,7 @@ func (rb Rebuild) saveNameStrings(db *sql.DB, ns []NameString) int64 {
 		log.Fatal(err)
 	}
 	for _, v := range ns {
-		_, err = stmt.Exec(v.ID, v.Name, v.Cardinality, v.CanonicalID,
+		_, err = stmt.Exec(v.ID, v.Name, v.Year, v.Cardinality, v.CanonicalID,
 			v.CanonicalFullID, v.CanonicalStemID, v.Virus, v.Bacteria, v.Surrogate,
 			v.ParseQuality)
 	}
@@ -235,11 +237,13 @@ func (rb Rebuild) workerNameString(kv *badger.DB, chIn <-chan []string,
 		}
 		var canonicalID, canonicalFullID, canonicalStemID sql.NullString
 		var cardinality sql.NullInt32
+		var year sql.NullInt16
 		if p.Parsed {
 			cardinality = sql.NullInt32{
 				Int32: int32(p.Cardinality),
 				Valid: true,
 			}
+			year = parseYear(p)
 			val := p.Canonical.Simple
 			canonicalID = sql.NullString{
 				String: gnuuid.New(val).String(),
@@ -287,6 +291,7 @@ func (rb Rebuild) workerNameString(kv *badger.DB, chIn <-chan []string,
 			ID:              p.VerbatimID,
 			Name:            p.Verbatim,
 			Cardinality:     cardinality,
+			Year:            year,
 			CanonicalID:     canonicalID,
 			CanonicalFullID: canonicalFullID,
 			CanonicalStemID: canonicalStemID,
@@ -341,4 +346,17 @@ func (rb Rebuild) loadNameStrings(chIn chan<- []string) {
 		chIn <- row
 	}
 	close(chIn)
+}
+
+func parseYear(p parsed.Parsed) sql.NullInt16 {
+	res := sql.NullInt16{}
+	if p.Authorship == nil || p.Authorship.Year == "" {
+		return res
+	}
+	yr := strings.Trim(p.Authorship.Year, "()")
+	yrInt, err := strconv.Atoi(yr[0:4])
+	if err != nil {
+		return res
+	}
+	return sql.NullInt16{Int16: int16(yrInt), Valid: true}
 }
