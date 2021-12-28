@@ -348,6 +348,16 @@ var DataSourcesInf = map[int]DataSourceInf{
 			return n.RecordID
 		},
 	},
+	196: {
+		TitleShort:     "World Flora Online",
+		UUID:           "39e7b959-9b16-460c-a77f-71934b7098e0",
+		HomeURL:        "http://www.worldfloraonline.org",
+		IsOutlinkReady: true,
+		OutlinkURL:     "http://www.worldfloraonline.org/taxon/{}",
+		OutlinkID: func(n NameInf) string {
+			return n.RecordID
+		},
+	},
 }
 
 // UploadDataSources populates data_sources table with data.
