@@ -358,6 +358,16 @@ var DataSourcesInf = map[int]DataSourceInf{
 			return n.RecordID
 		},
 	},
+	197: {
+		TitleShort:     "W",
+		UUID:           "814d1a77-2234-449b-af4a-138e0e1b1326",
+		HomeURL:        "https://wcvp.science.kew.org/",
+		IsOutlinkReady: true,
+		OutlinkURL:     "https://wcvp.science.kew.org/taxon/{}",
+		OutlinkID: func(n NameInf) string {
+			return n.RecordID
+		},
+	},
 }
 
 // UploadDataSources populates data_sources table with data.
