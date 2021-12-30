@@ -368,6 +368,11 @@ var DataSourcesInf = map[int]DataSourceInf{
 			return n.RecordID
 		},
 	},
+	198: {
+		TitleShort: "Leipzig Cat. Vasc. Plants",
+		UUID:       "75fb6846-4c37-4b45-a2ab-05dc0124957b",
+		HomeURL:    "https://github.com/idiv-biodiversity/LCVP",
+	},
 }
 
 // UploadDataSources populates data_sources table with data.
