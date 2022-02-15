@@ -373,6 +373,21 @@ var DataSourcesInf = map[int]DataSourceInf{
 		UUID:       "75fb6846-4c37-4b45-a2ab-05dc0124957b",
 		HomeURL:    "https://github.com/idiv-biodiversity/LCVP",
 	},
+	200: {
+		TitleShort: "Terrestrial Parasite Tracker",
+		UUID:       "75886826-50f9-4513-916d-3ab4875cb063",
+		HomeURL:    "https://github.com/njdowdy/tpt-taxonomy",
+	},
+	201: {
+		TitleShort:     "ICTV Virus Taxonomy",
+		UUID:           "75886826-50f9-4513-916d-3ab4875cb063",
+		HomeURL:        "https://talk.ictvonline.org/taxonomy",
+		IsOutlinkReady: true,
+		OutlinkURL:     "https://talk.ictvonline.org/taxonomy/p/taxonomy-history?taxnode_id={}",
+		OutlinkID: func(n NameInf) string {
+			return n.LocalID
+		},
+	},
 }
 
 // UploadDataSources populates data_sources table with data.
