@@ -64,7 +64,7 @@ type NameString struct {
 	// Name-string with authorships and annotations as it is given by a dataset.
 	// Sometimes an authorship is concatenated with a name-string by our
 	// import scripts.
-	Name string `gorm:"type:varchar(255);not null"`
+	Name string `sql:"type:CHARACTER VARYING(255) COLLATE \"C\" NOT NULL"`
 	// Year is the year when a name was published
 	Year sql.NullInt16 `gorm:"type:int"`
 	// Number of elements in a 'classic' Linnaen name: 0 - unknown, not available,
@@ -95,7 +95,7 @@ type Canonical struct {
 	// UUID v5 generated for simple canonical form.
 	ID string `gorm:"type:uuid;primary_key;auto_increment:false"`
 	// Canonical name-string
-	Name string `gorm:"type:varchar(255);index:canonical_name;not null"`
+	Name string `sql:"type:CHARACTER VARYING(255) COLLATE \"C\"" gorm:"index:canonical_name;not null"`
 }
 
 // CanonicalFull ia a full canonical form.
@@ -104,7 +104,7 @@ type CanonicalFull struct {
 	// and hybrid signs for named hybrids).
 	ID string `gorm:"type:uuid;primary_key;auto_increment:false"`
 	// Canonical name-string
-	Name string `gorm:"type:varchar(255);not null"`
+	Name string `sql:"type:CHARACTER VARYING(255) COLLATE \"C\"" gorm:"not null"`
 }
 
 // CanonicalStem is a stemmed derivative of a simple canonical form.
@@ -112,7 +112,7 @@ type CanonicalStem struct {
 	// UUID v5 for the stemmed derivative of a simple canonical form.
 	ID string `gorm:"type:uuid;primary_key;auto_increment:false"`
 	// Stemmed canonical name-string
-	Name string `gorm:"type:varchar(255);not null"`
+	Name string `sql:"type:CHARACTER VARYING(255) COLLATE \"C\"" gorm:"not null"`
 }
 
 // NameStringIndex is a name-strings relations to datasets.
@@ -138,9 +138,9 @@ type NameStringIndex struct {
 	// RecordID of a currently accepted name-string for the taxon.
 	AcceptedRecordID string `gorm:"type:varchar(255);index:accepted_record_id"`
 	// Pipe-delimited string containing classification supplied with the resource.
-	Classification string
+	Classification string `sql:"type:CHARACTER VARYING COLLATE \"C\""`
 	// RecordIDs of the classificatiaon elements (if given).
-	ClassificationIDs string
+	ClassificationIDs string `sql:"type:CHARACTER VARYING COLLATE \"C\""`
 	// Ranks of the classification elements.
 	ClassificationRanks string
 }
@@ -153,9 +153,9 @@ type Word struct {
 	ID string `gorm:"primary_key;type:uuid;auto_increment:false"`
 	// Normalized is the word normalized by GNparser. This field is used
 	// for sorting results.
-	Normalized string `gorm:"type:varchar(255);primary_key;auto_increment:false"`
+	Normalized string `sql:"type:CHARACTER VARYING(255) COLLATE \"C\"" gorm:"primary_key;auto_increment:false"`
 	// Modified is a heavy-normalized word. This field is used for matching.
-	Modified string `gorm:"type:varchar(255);not null;index:words_modified"`
+	Modified string `sql:"type:CHARACTER VARYING(255) COLLATE \"C\"" gorm:"not null;index:words_modified"`
 	// WordTypeID is the integer representation of parsed.WordType
 	// from GNparser.
 	TypeID int
