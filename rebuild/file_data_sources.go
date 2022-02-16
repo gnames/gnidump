@@ -380,7 +380,7 @@ var DataSourcesInf = map[int]DataSourceInf{
 	},
 	201: {
 		TitleShort:     "ICTV Virus Taxonomy",
-		UUID:           "75886826-50f9-4513-916d-3ab4875cb063",
+		UUID:           "e090da49-8feb-4e03-aff6-a0aa50c4dc37",
 		HomeURL:        "https://talk.ictvonline.org/taxonomy",
 		IsOutlinkReady: true,
 		OutlinkURL:     "https://talk.ictvonline.org/taxonomy/p/taxonomy-history?taxnode_id={}",
