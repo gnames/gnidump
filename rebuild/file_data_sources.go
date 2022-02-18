@@ -388,6 +388,11 @@ var DataSourcesInf = map[int]DataSourceInf{
 			return n.LocalID
 		},
 	},
+	202: {
+		TitleShort: "Discover Life Bees",
+		UUID:       "7911b6d6-9029-496f-b3a7-7e233199c1d7",
+		HomeURL:    "http://www.discoverlife.org/mp/20q?act=x_checklist&guide=Apoidea_species",
+	},
 }
 
 // UploadDataSources populates data_sources table with data.
