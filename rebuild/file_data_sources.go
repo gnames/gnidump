@@ -135,6 +135,10 @@ var DataSourcesInf = map[int]DataSourceInf{
 		UUID:           "eebb6f49-e1a1-4f42-b9d5-050844c893cd",
 		IsOutlinkReady: true,
 		HomeURL:        "https://www.gbif.org/dataset/d7dddbf4-2cf0-4f39-9b2a-bb099caae36c",
+		OutlinkURL:     "https://gbif.org/species/{}",
+		OutlinkID: func(n NameInf) string {
+			return n.RecordID
+		},
 	},
 	12: {
 		TitleShort:     "EOL",
