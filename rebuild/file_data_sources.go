@@ -180,6 +180,17 @@ var DataSourcesInf = map[int]DataSourceInf{
 		IsOutlinkReady: true,
 		HomeURL:        "https://www.fishbase.in/home.htm",
 	},
+	158: {
+		Title:          "European Nature Information System",
+		TitleShort:     "EUNIS",
+		Description:    "Find species, habitat types and protected sites across Europe ",
+		HomeURL:        "https://eunis.eea.europa.eu/",
+		IsOutlinkReady: true,
+		OutlinkURL:     "https://eunis.eea.europa.eu/species/{}",
+		OutlinkID: func(n NameInf) string {
+			return n.RecordID
+		},
+	},
 	165: {
 		TitleShort: "Tropicos",
 		Description: "The Tropicos database links over 1.33M scientific names " +
