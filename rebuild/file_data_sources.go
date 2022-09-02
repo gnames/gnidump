@@ -343,9 +343,17 @@ var DataSourcesInf = map[int]DataSourceInf{
 		DataURL:        "https://www.howardandmoore.org/howard-and-moore-database/",
 	},
 	193: {
-		Title:      "Myriatrix",
-		TitleShort: "Myriatrix",
-		HomeURL:    "http://myriatrix.myspecies.info",
+		Title:          "Myriatrix",
+		TitleShort:     "Myriatrix",
+		HomeURL:        "http://myriatrix.myspecies.info",
+		IsOutlinkReady: true,
+		OutlinkURL:     "https://myriatrix.myspecies.info/myriatrix/{}",
+		OutlinkID: func(n NameInf) string {
+			name := strings.ToLower(n.CanonicalFull)
+			name = strings.ReplaceAll(name, " ", "-")
+			name = strings.ReplaceAll(name, ".", "")
+			return name
+		},
 	},
 	194: {
 		TitleShort:     "Plazi",
