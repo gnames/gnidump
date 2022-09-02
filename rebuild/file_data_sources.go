@@ -342,6 +342,11 @@ var DataSourcesInf = map[int]DataSourceInf{
 		IsOutlinkReady: true,
 		DataURL:        "https://www.howardandmoore.org/howard-and-moore-database/",
 	},
+	193: {
+		Title:      "Myriatrix",
+		TitleShort: "Myriatrix",
+		HomeURL:    "http://myriatrix.myspecies.info",
+	},
 	194: {
 		TitleShort:     "Plazi",
 		UUID:           "68938dc9-b93d-43bc-9d51-5c2a632f136f",
@@ -367,6 +372,7 @@ var DataSourcesInf = map[int]DataSourceInf{
 		TitleShort:     "World Flora Online",
 		UUID:           "39e7b959-9b16-460c-a77f-71934b7098e0",
 		HomeURL:        "http://www.worldfloraonline.org",
+		Description:    "An Online Flora of All Known Plants",
 		IsOutlinkReady: true,
 		OutlinkURL:     "http://www.worldfloraonline.org/taxon/{}",
 		OutlinkID: func(n NameInf) string {
