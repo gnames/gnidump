@@ -71,6 +71,7 @@ func (rb Rebuild) dbNameStringIndices(chOut <-chan []NameStringIndex,
 		fmt.Printf("\rUploaded %s indices, %s names/sec",
 			humanize.Comma(total), humanize.Comma(speed))
 	}
+	log.Println()
 	log.Println("Uploaded name_string_indices table")
 }
 
