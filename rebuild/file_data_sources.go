@@ -422,6 +422,26 @@ var DataSourcesInf = map[int]DataSourceInf{
 		UUID:       "7911b6d6-9029-496f-b3a7-7e233199c1d7",
 		HomeURL:    "http://www.discoverlife.org/mp/20q?act=x_checklist&guide=Apoidea_species",
 	},
+	203: {
+		TitleShort:     "MycoBank",
+		UUID:           "b0ac4f6f-fc56-41b4-ad69-6af30a881e7e",
+		HomeURL:        "https://www.mycobank.org",
+		IsOutlinkReady: true,
+		OutlinkURL:     "https://www.mycobank.org/page/Name details page/{}",
+		OutlinkID: func(n NameInf) string {
+			return n.RecordID
+		},
+	},
+	204: {
+		TitleShort:     "Fungal Names",
+		UUID:           "4b373ccd-2f47-4c43-81c3-c2402360fd43",
+		HomeURL:        "https://nmdc.cn/fungalnames",
+		IsOutlinkReady: true,
+		OutlinkURL:     "https://nmdc.cn/fungalnames/namesearch/toallfungalinfo?recordNumber={}",
+		OutlinkID: func(n NameInf) string {
+			return n.RecordID
+		},
+	},
 }
 
 // UploadDataSources populates data_sources table with data.
