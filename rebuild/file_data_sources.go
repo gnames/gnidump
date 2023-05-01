@@ -442,6 +442,11 @@ var DataSourcesInf = map[int]DataSourceInf{
 			return n.RecordID
 		},
 	},
+	205: {
+		TitleShort: "Nomenclator zoologicus",
+		UUID:       "02fd9b10-78e4-43a5-889e-0639a771c576",
+		HomeURL:    "https://doi.org/10.5281/zenodo.7010676",
+	},
 }
 
 // UploadDataSources populates data_sources table with data.
