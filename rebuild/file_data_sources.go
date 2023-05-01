@@ -230,7 +230,7 @@ var DataSourcesInf = map[int]DataSourceInf{
 		IsOutlinkReady: true,
 		OutlinkURL:     "https://arctos.database.museum/name/{}",
 		OutlinkID: func(n NameInf) string {
-			return url.QueryEscape(n.Canonical)
+			return url.QueryEscape(n.CanonicalFull)
 		},
 	},
 	172: {
