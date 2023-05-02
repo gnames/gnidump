@@ -443,7 +443,7 @@ var DataSourcesInf = map[int]DataSourceInf{
 		},
 	},
 	205: {
-		TitleShort: "Nomenclator zoologicus",
+		TitleShort: "Nomenclator Zoologicus",
 		UUID:       "02fd9b10-78e4-43a5-889e-0639a771c576",
 		HomeURL:    "https://doi.org/10.5281/zenodo.7010676",
 	},
