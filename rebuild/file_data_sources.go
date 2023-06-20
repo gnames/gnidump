@@ -392,7 +392,7 @@ var DataSourcesInf = map[int]DataSourceInf{
 		UUID:           "814d1a77-2234-449b-af4a-138e0e1b1326",
 		HomeURL:        "https://wcvp.science.kew.org/",
 		IsOutlinkReady: true,
-		OutlinkURL:     "https://wcvp.science.kew.org/taxon/{}",
+		OutlinkURL:     "https://powo.science.kew.org/taxon/urn:lsid:ipni.org:names:{}",
 		OutlinkID: func(n NameInf) string {
 			return n.RecordID
 		},
