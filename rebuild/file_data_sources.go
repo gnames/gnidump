@@ -447,6 +447,11 @@ var DataSourcesInf = map[int]DataSourceInf{
 		UUID:       "02fd9b10-78e4-43a5-889e-0639a771c576",
 		HomeURL:    "https://doi.org/10.5281/zenodo.7010676",
 	},
+	206: {
+		TitleShort: "Ruhoff 1980",
+		UUID:       "5413758a-7fd8-4db9-b06b-f780f8688f2a",
+		HomeURL:    "https://doi.org/10.5479/si.00810282.294",
+	},
 }
 
 // UploadDataSources populates data_sources table with data.
