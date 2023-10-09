@@ -452,6 +452,17 @@ var DataSourcesInf = map[int]DataSourceInf{
 		UUID:       "5413758a-7fd8-4db9-b06b-f780f8688f2a",
 		HomeURL:    "https://doi.org/10.5479/si.00810282.294",
 	},
+	207: {
+		TitleShort:     "Wikidata",
+		UUID:           "f972c3e7-9da8-48d1-aa00-5c6c56c24614",
+		HomeURL:        "https://wikidata.org",
+		DataURL:        "https://www.wikidata.org/wiki/Wikidata:Database_download",
+		IsOutlinkReady: true,
+		OutlinkURL:     "https://wikidata.org/wiki/{}",
+		OutlinkID: func(n NameInf) string {
+			return n.RecordID
+		},
+	},
 }
 
 // UploadDataSources populates data_sources table with data.

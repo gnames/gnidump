@@ -191,7 +191,7 @@ func qualityMaps() (map[int]byte, map[int]byte) {
 	curatedAry := []int{1, 2, 3, 5, 6, 9, 105, 132, 151, 155,
 		163, 165, 167, 172, 173, 174, 175, 176, 177, 181, 183, 184, 185,
 		187, 188, 189, 193, 195, 197, 201, 203, 204, 205}
-	autoCuratedAry := []int{11, 12, 158, 170, 179, 186, 194, 196, 206}
+	autoCuratedAry := []int{11, 12, 158, 170, 179, 186, 194, 196, 206, 207}
 
 	curated := make(map[int]byte)
 	autoCurated := make(map[int]byte)
