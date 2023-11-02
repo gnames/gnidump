@@ -124,6 +124,15 @@ var DataSourcesInf = map[int]DataSourceInf{
 		UUID:           "bf077d91-673a-4be4-8af9-76db45d07e98",
 		IsOutlinkReady: true,
 		HomeURL:        "https://marinespecies.org",
+		OutlinkURL:     "https://www.marinespecies.org/aphia.php?p=taxdetails&id={}",
+		OutlinkID: func(n NameInf) string {
+			id := n.RecordID
+			el := strings.Split(id, ":")
+			if len(el) == 0 {
+				return ""
+			}
+			return el[len(el)-1]
+		},
 	},
 	10: {
 		TitleShort: "Freebase",
