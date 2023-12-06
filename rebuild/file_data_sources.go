@@ -475,6 +475,17 @@ var DataSourcesInf = map[int]DataSourceInf{
 			return n.RecordID
 		},
 	},
+	208: {
+		TitleShort:     "LPSN",
+		UUID:           "3d10ba04-be3a-4617-b9d5-07f1ae5ac195",
+		HomeURL:        "https://lpsn.dsmz.de/",
+		DataURL:        "https://lpsn.dsmz.de/downloads",
+		IsOutlinkReady: true,
+		OutlinkURL:     "{}",
+		OutlinkID: func(n NameInf) string {
+			return n.LocalID
+		},
+	},
 }
 
 // UploadDataSources populates data_sources table with data.
