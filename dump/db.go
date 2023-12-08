@@ -3,7 +3,8 @@ package dump
 import (
 	"database/sql"
 	"fmt"
-	"log"
+	"log/slog"
+	"os"
 
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -20,7 +21,8 @@ type MyDB struct {
 func (d MyDB) NewDb() *sql.DB {
 	db, err := sql.Open("mysql", d.opts())
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Cannot connect to database", "error", err)
+		os.Exit(1)
 	}
 	return db
 }

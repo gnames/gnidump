@@ -5,7 +5,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -39,7 +39,7 @@ const (
 // UploadNameStringIndices constracts data for name_string_indices table and
 // aploads them to the database.
 func (rb Rebuild) UploadNameStringIndices() {
-	log.Println("Uploading data for name_string_indices table")
+	slog.Info("Uploading data for name_string_indices table")
 	kv := keyval.InitKeyVal(rb.ParserKeyValDir)
 	defer kv.Close()
 	chIn := make(chan []string)
@@ -71,8 +71,7 @@ func (rb Rebuild) dbNameStringIndices(chOut <-chan []NameStringIndex,
 		fmt.Printf("\rUploaded %s indices, %s names/sec",
 			humanize.Comma(total), humanize.Comma(speed))
 	}
-	log.Println()
-	log.Println("Uploaded name_string_indices table")
+	slog.Info("Uploaded name_string_indices table")
 }
 
 func (rb Rebuild) saveNameStringIndices(db *sql.DB, nsi []NameStringIndex) int64 {
@@ -81,11 +80,13 @@ func (rb Rebuild) saveNameStringIndices(db *sql.DB, nsi []NameStringIndex) int64
 		"classification", "classification_ids", "classification_ranks"}
 	transaction, err := db.Begin()
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Cannot start postgres transaction", "error", err)
+		os.Exit(1)
 	}
 	stmt, err := transaction.Prepare(pq.CopyIn("name_string_indices", columns...))
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Cannot prepare copy", "error", err)
+		os.Exit(1)
 	}
 	for _, v := range nsi {
 		_, err = stmt.Exec(
@@ -104,20 +105,24 @@ func (rb Rebuild) saveNameStringIndices(db *sql.DB, nsi []NameStringIndex) int64
 		)
 	}
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Cannot run copy statement", "error", err)
+		os.Exit(1)
 	}
 
 	_, err = stmt.Exec()
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Cannot run last exec", "error", err)
+		os.Exit(1)
 	}
 
 	err = stmt.Close()
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Cannot close copy", "error", err)
+		os.Exit(1)
 	}
 	if err = transaction.Commit(); err != nil {
-		log.Fatal(err)
+		slog.Error("Cannot commit transaction", "error", err)
+		os.Exit(1)
 	}
 	return int64(len(nsi))
 }
@@ -141,7 +146,8 @@ func (rb Rebuild) workerNameStringIndex(kv *badger.DB, chIn <-chan []string,
 		parsedBytes := keyval.GetValue(kv, row[nsiNameStringIDF])
 		err = enc.Decode(parsedBytes, &parsed)
 		if err != nil {
-			log.Fatal(err)
+			slog.Error("Cannot decode parsed data", "error", err)
+			os.Exit(1)
 		}
 		dsi := NameStringIndex{
 			DataSourceID:        dsID,
@@ -184,7 +190,7 @@ func (rb Rebuild) loadNameStringIndices(chIn chan<- []string) {
 	path := filepath.Join(rb.DumpDir, "name_string_indices.csv")
 	f, err := os.Open(path)
 	if err != nil {
-		log.Printf("ERROR: %s", err.Error())
+		slog.Error("Cannot open name_string_indices.csv", "error", err)
 	}
 	defer f.Close()
 	r := csv.NewReader(f)
@@ -192,7 +198,7 @@ func (rb Rebuild) loadNameStringIndices(chIn chan<- []string) {
 	// skip header
 	_, err = r.Read()
 	if err != nil {
-		log.Printf("ERROR: %s", err.Error())
+		slog.Error("Cannot read csv header", "error", err)
 	}
 	for {
 		row, err := r.Read()
@@ -200,7 +206,7 @@ func (rb Rebuild) loadNameStringIndices(chIn chan<- []string) {
 			break
 		}
 		if err != nil {
-			log.Printf("ERROR: %s", err.Error())
+			slog.Error("Cannot read csv line", "error", err)
 		}
 		chIn <- row
 	}
@@ -210,7 +216,7 @@ func (rb Rebuild) loadNameStringIndices(chIn chan<- []string) {
 func (rb Rebuild) RemoveOrphans() {
 	db := rb.PgDB.NewDb()
 	defer db.Close()
-	log.Println("Removing orphan name-strings")
+	slog.Info("Removing orphan name-strings")
 	q := `DELETE FROM name_strings
   WHERE id IN (
     SELECT ns.id
@@ -222,11 +228,11 @@ func (rb Rebuild) RemoveOrphans() {
 
 	_, err := db.Exec(q)
 	if err != nil {
-		log.Printf("removeOrphans 1")
-		log.Fatal(err)
+		slog.Error("Cannot remove orphan name-strings", "error", err)
+		os.Exit(1)
 	}
 
-	log.Println("Removing orphan canonicals")
+	slog.Info("Removing orphan canonicals")
 	q = `DELETE FROM canonicals
   WHERE id IN (
     SELECT c.id
@@ -238,11 +244,11 @@ func (rb Rebuild) RemoveOrphans() {
 
 	_, err = db.Exec(q)
 	if err != nil {
-		log.Printf("removeOrphans 2")
-		log.Fatal(err)
+		slog.Error("Cannot remove orphan canonicals", "error", err)
+		os.Exit(1)
 	}
 
-	log.Println("Removing orphan canonical_fulls")
+	slog.Info("Removing orphan canonical_fulls")
 	q = `DELETE FROM canonical_fulls
   WHERE id IN (
     SELECT cf.id
@@ -254,11 +260,11 @@ func (rb Rebuild) RemoveOrphans() {
 
 	_, err = db.Exec(q)
 	if err != nil {
-		log.Printf("removeOrphans 3")
-		log.Fatal(err)
+		slog.Error("Cannot remove orphan canonical_fulls", "error", err)
+		os.Exit(1)
 	}
 
-	log.Println("Removing orphan canonical_stems")
+	slog.Info("Removing orphan canonical_stems")
 	q = `DELETE FROM canonical_stems
     WHERE id IN (
       SELECT cs.id
@@ -269,8 +275,8 @@ func (rb Rebuild) RemoveOrphans() {
       )`
 	_, err = db.Exec(q)
 	if err != nil {
-		log.Printf("removeOrphans 4")
-		log.Fatal(err)
+		slog.Error("Cannot remove orphan canonical_stems", "error", err)
+		os.Exit(1)
 	}
 
 }
@@ -279,7 +285,7 @@ func (rb Rebuild) RemoveOrphans() {
 func (rb Rebuild) VerificationView() {
 	db := rb.PgDB.NewDb()
 	defer db.Close()
-	log.Println("Building verification view, it will take some time...")
+	slog.Info("Building verification view, it will take some time...")
 	viewQuery := `CREATE MATERIALIZED VIEW verification AS
 WITH taxon_names AS (
 SELECT nsi.data_source_id, nsi.record_id, nsi.name_string_id, ns.name
@@ -306,29 +312,29 @@ SELECT nsi.data_source_id, nsi.record_id, nsi.name_string_id,
     ) OR ns.virus = TRUE`
 	_, err := db.Exec("DROP MATERIALIZED VIEW IF EXISTS verification")
 	if err != nil {
-		log.Printf("verificationView")
-		log.Fatal(err)
+		slog.Error("Cannot drop verification view", "error", err)
+		os.Exit(1)
 	}
 	_, err = db.Exec(viewQuery)
 	if err != nil {
-		log.Printf("verificationView")
-		log.Fatal(err)
+		slog.Error("Cannot run verification create", "error", err)
+		os.Exit(1)
 	}
-	log.Println("Building indices for verification view, it will take some time...")
+	slog.Info("Building indices for verification view, it will take some time...")
 	_, err = db.Exec("CREATE INDEX ON verification (canonical_id)")
 	if err != nil {
-		log.Printf("verificationView")
-		log.Fatal(err)
+		slog.Error("Cannot create verification index", "error", err)
+		os.Exit(1)
 	}
 	_, err = db.Exec("CREATE INDEX ON verification (name_string_id)")
 	if err != nil {
-		log.Printf("verificationView")
-		log.Fatal(err)
+		slog.Error("Cannot create verification index2", "error", err)
+		os.Exit(1)
 	}
 	_, err = db.Exec("CREATE INDEX ON verification (year)")
 	if err != nil {
-		log.Printf("verificationView")
-		log.Fatal(err)
+		slog.Error("Cannot create verification index3", "error", err)
+		os.Exit(1)
 	}
-	log.Println("View verification is created")
+	slog.Info("View verification is created")
 }

@@ -21,7 +21,7 @@
 package cmd
 
 import (
-	"log"
+	"log/slog"
 	"os"
 
 	"github.com/gnames/gnidump"
@@ -32,11 +32,11 @@ import (
 var dumpCmd = &cobra.Command{
 	Use:   "dump",
 	Short: "Dumps GNI data to CSV files.",
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		gnd := gnidump.NewGNIdump(opts...)
 		err := gnd.CSVdump()
 		if err != nil {
-			log.Println(err)
+			slog.Error("Cannot create data dump", "error", err)
 			os.Exit(1)
 		}
 	},
@@ -44,14 +44,4 @@ var dumpCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(dumpCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// dumpCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// dumpCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

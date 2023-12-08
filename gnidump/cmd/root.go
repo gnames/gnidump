@@ -22,8 +22,7 @@ package cmd
 
 import (
 	"fmt"
-	"io/ioutil"
-	"log"
+	"log/slog"
 	"os"
 	"path/filepath"
 
@@ -100,7 +99,7 @@ to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		version, err := cmd.Flags().GetBool("version")
 		if err != nil {
-			log.Println(err)
+			slog.Error("Cannot get flag", "error", err)
 			os.Exit(1)
 		}
 		if version {
@@ -150,7 +149,7 @@ func initConfig() {
 		// Find home directory.
 		home, err = homedir.Dir()
 		if err != nil {
-			fmt.Println(err)
+			slog.Error("Cannot fine home dir", "error", err)
 			os.Exit(1)
 		}
 		home = filepath.Join(home, ".config")
@@ -163,13 +162,11 @@ func initConfig() {
 	viper.AutomaticEnv() // read in environment variables that match
 
 	configPath := filepath.Join(home, fmt.Sprintf("%s.yaml", configFile))
-	touchConfigFile(configPath, configFile)
+	touchConfigFile(configPath)
 
 	// If a config file is found, read it in.
-	if err := viper.ReadInConfig(); err == nil {
-		//log.Println("Using config file:", viper.ConfigFileUsed())
-	} else {
-		fmt.Println("Config file $HOME/.gnidump.yaml not found")
+	if err := viper.ReadInConfig(); err != nil {
+		fmt.Println("Config file .gnidump.yaml not found")
 		os.Exit(1)
 	}
 	getOpts()
@@ -178,10 +175,10 @@ func initConfig() {
 // getOpts imports data from the configuration file. Some of the settings can
 // be overriden by command line flags.
 func getOpts() []gnidump.Option {
-	cfg := &config{}
-	err := viper.Unmarshal(cfg)
+	cfg := config{}
+	err := viper.Unmarshal(&cfg)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Cannot unmarshal config file", "error", err)
 	}
 
 	if cfg.InputDir != "" {
@@ -218,25 +215,27 @@ func getOpts() []gnidump.Option {
 }
 
 // touchConfigFile checks if config file exists, and if not, it gets created.
-func touchConfigFile(configPath string, configFile string) {
+func touchConfigFile(configPath string) {
 	fileExists, _ := gnsys.FileExists(configPath)
 	if fileExists {
 		return
 	}
 
-	log.Println("Creating config file:", configPath)
-	createConfig(configPath, configFile)
+	slog.Info("Creating config file", "path", configPath)
+	createConfig(configPath)
 }
 
 // createConfig creates config file.
-func createConfig(path string, file string) {
+func createConfig(path string) {
 	err := gnsys.MakeDir(filepath.Dir(path))
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Cannot create config dir", "error", err)
+		os.Exit(1)
 	}
 
-	err = ioutil.WriteFile(path, []byte(configText), 0644)
+	err = os.WriteFile(path, []byte(configText), 0644)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Cannot write to config file", "error", err)
+		os.Exit(1)
 	}
 }

@@ -3,7 +3,8 @@ package rebuild
 import (
 	"database/sql"
 	"fmt"
-	"log"
+	"log/slog"
+	"os"
 	"strings"
 
 	"github.com/jinzhu/gorm"
@@ -22,7 +23,8 @@ type PgDB struct {
 func (pdb PgDB) NewDbGorm() *gorm.DB {
 	db, err := gorm.Open("postgres", pdb.opts())
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Cannot connect to database", "error", err)
+		os.Exit(1)
 	}
 	return db
 }
@@ -32,7 +34,8 @@ func (pdb PgDB) NewDbGorm() *gorm.DB {
 func (pdb PgDB) NewDb() *sql.DB {
 	db, err := sql.Open("postgres", pdb.opts())
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Cannot connect to database", "error", err)
+		os.Exit(1)
 	}
 	return db
 }
@@ -62,7 +65,7 @@ COMMENT ON SCHEMA public IS 'standard public schema'`
 
 // Migrate creates all the tables and indices in the database.
 func (pdb PgDB) Migrate() error {
-	log.Printf("Running initial database '%s' migrations.\n", pdb.PgDB)
+	slog.Info("Running initial database migrations", "database", pdb.PgDB)
 	db := pdb.NewDbGorm()
 	db.AutoMigrate(
 		&DataSource{},
@@ -73,6 +76,8 @@ func (pdb PgDB) Migrate() error {
 		&NameStringIndex{},
 		&Word{},
 		&WordNameString{},
+		&VernacularString{},
+		&VernacularStringIndex{},
 	)
 	if db.Error != nil {
 		return db.Error

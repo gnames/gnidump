@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,7 @@ limitations under the License.
 package cmd
 
 import (
-	"log"
+	"log/slog"
 	"os"
 
 	"github.com/gnames/gnidump"
@@ -27,11 +27,11 @@ import (
 var rebuildCmd = &cobra.Command{
 	Use:   "rebuild",
 	Short: "Uses CSV dump files to recreate GNI database for PostgreSQL",
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		gnd := gnidump.NewGNIdump(opts...)
 		err := gnd.PopulatePG()
 		if err != nil {
-			log.Println(err)
+			slog.Error("Cannot populate database", "error", err)
 			os.Exit(1)
 		}
 	},
@@ -39,14 +39,4 @@ var rebuildCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(rebuildCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// rebuildCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// rebuildCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

@@ -1,7 +1,7 @@
 package gnidump
 
 import (
-	"log"
+	"log/slog"
 
 	"github.com/gnames/gnidump/dump"
 	"github.com/gnames/gnsys"
@@ -9,7 +9,7 @@ import (
 
 func (gnd GNIdump) CSVdump() error {
 	var err error
-	log.Println("Dumping data from GNI to CSV files.")
+	slog.Info("Dumping data from GNI to CSV files.")
 	dmp := dump.NewDump(gnd.MyDB, gnd.InputDir, gnd.JobsNum)
 	err = gnsys.MakeDir(dmp.DumpDir)
 	if err != nil {

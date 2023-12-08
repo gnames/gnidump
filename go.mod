@@ -12,11 +12,13 @@ require (
 	github.com/go-sql-driver/mysql v1.7.1
 	github.com/jinzhu/gorm v1.9.16
 	github.com/lib/pq v1.10.9
+	github.com/lmittmann/tint v1.0.3
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.30.0
 	github.com/spf13/cobra v1.8.0
-	github.com/spf13/viper v1.18.0
+	github.com/spf13/viper v1.18.2
+	golang.org/x/text v0.14.0
 )
 
 require (
@@ -58,7 +60,6 @@ require (
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9 // indirect
 	golang.org/x/net v0.19.0 // indirect
 	golang.org/x/sys v0.15.0 // indirect
-	golang.org/x/text v0.14.0 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect

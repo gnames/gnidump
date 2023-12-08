@@ -1,7 +1,8 @@
 package keyval
 
 import (
-	"log"
+	"log/slog"
+	"os"
 
 	"github.com/dgraph-io/badger/v2"
 	"github.com/gnames/gnsys"
@@ -14,7 +15,8 @@ func InitKeyVal(dir string) *badger.DB {
 	options.Logger = nil
 	bdb, err := badger.Open(options)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Cannot init the key/value store", "error", err)
+		os.Exit(1)
 	}
 	return bdb
 }
@@ -25,21 +27,23 @@ func GetValue(kv *badger.DB, key string) []byte {
 	defer func() {
 		err := txn.Commit()
 		if err != nil {
-			log.Fatal(err)
+			slog.Error("Cannot commit key/value transaction", "error", err)
+			os.Exit(1)
 		}
 	}()
 	val, err := txn.Get([]byte(key))
 	if err == badger.ErrKeyNotFound {
-		log.Printf("%s not found", key)
-		// log.Fatal(err)
+		slog.Warn("Cannot find key", "key", key)
 		return nil
 	} else if err != nil {
-		log.Fatal(err)
+		slog.Error("Cannot get value from key/value store", "error", err)
+		os.Exit(1)
 	}
 	var res []byte
 	res, err = val.ValueCopy(res)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Cannot copy value", "error", err)
+		os.Exit(1)
 	}
 	return res
 }

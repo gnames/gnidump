@@ -2,7 +2,7 @@ package gnidump
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 
 	"github.com/gnames/gnidump/rebuild"
 	"github.com/gnames/gnsys"
@@ -10,7 +10,7 @@ import (
 
 func (gnd GNIdump) PopulatePG() error {
 	var err error
-	log.Printf("Rebuilding '%s' database.\n", gnd.PgDB.PgDB)
+	slog.Info("Rebuilding database", "database", gnd.PgDB.PgDB)
 	if err = gnd.ResetDB(); err != nil {
 		return fmt.Errorf("reset of DB did not work: %w", err)
 	}
@@ -21,7 +21,10 @@ func (gnd GNIdump) PopulatePG() error {
 	if err = gnsys.MakeDir(rb.ParserKeyValDir); err != nil {
 		return err
 	}
-	if err = rb.UploadNameString(); err != nil {
+	if err = gnsys.MakeDir(rb.VernKeyValDir); err != nil {
+		return err
+	}
+	if err = rb.UploadNameStrings(); err != nil {
 		return fmt.Errorf("unable to populate name_strings table: %w", err)
 	}
 	if err = rb.UploadDataSources(); err != nil {
@@ -29,6 +32,13 @@ func (gnd GNIdump) PopulatePG() error {
 	}
 
 	rb.UploadNameStringIndices()
+
+	if err = rb.UploadVernacularStrings(); err != nil {
+		return fmt.Errorf("unable to populate vernacular_strings table: %w", err)
+	}
+
+	rb.UploadVernStringIndices()
+
 	rb.RemoveOrphans()
 	rb.CreateWords()
 	rb.VerificationView()

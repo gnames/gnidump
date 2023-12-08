@@ -5,7 +5,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -41,11 +41,11 @@ type CanonicalData struct {
 	Cardinality int
 }
 
-// UploadNameString constructs data for name_strings, canonicals,
+// UploadNameStrings constructs data for name_strings, canonicals,
 // canonical_fulls, canonical_stems tables and uploads these data to the
 // database.
-func (rb Rebuild) UploadNameString() error {
-	log.Println("Uploading data for name_strings table")
+func (rb Rebuild) UploadNameStrings() error {
+	slog.Info("Uploading data for name_strings table")
 	chIn := make(chan []string)
 	chCan := make(chan []CanonicalData)
 	chOut := make(chan []NameString)
@@ -102,8 +102,7 @@ func (rb Rebuild) dbNameString(chOut <-chan []NameString,
 			break
 		}
 	}
-	fmt.Println()
-	log.Println("Uploaded name_strings table")
+	slog.Info("Uploaded name_strings table")
 }
 
 func (rb Rebuild) saveCanonicals(cs []CanonicalData) {
@@ -129,22 +128,21 @@ func (rb Rebuild) saveCanonicals(cs []CanonicalData) {
 	q0 := `INSERT INTO %s (id, name) VALUES %s ON CONFLICT DO NOTHING`
 	q := fmt.Sprintf(q0, "canonicals", strings.Join(cal, ","))
 	if _, err = db.Query(q); err != nil {
-		err = fmt.Errorf("Failed to populate canonicals table: %w", err)
-		fmt.Println(q)
-		log.Fatal(err)
+		slog.Error("save canonicals failed", "error", err)
+		os.Exit(1)
 	}
 	if len(calFull) > 0 {
 		q = fmt.Sprintf(q0, "canonical_fulls", strings.Join(calFull, ","))
 		if _, err = db.Query(q); err != nil {
-			log.Println("saveCanonicals canonical_fulls")
-			log.Fatal(err)
+			slog.Error("save canonical_fulls failed", "error", err)
+			os.Exit(1)
 		}
 	}
 	if len(calStem) > 0 {
 		q = fmt.Sprintf(q0, "canonical_stems", strings.Join(calStem, ","))
 		if _, err = db.Query(q); err != nil {
-			log.Println("saveCanonicals canonical_stems")
-			log.Fatal(err)
+			slog.Error("save canonical_stems failed", "error", err)
+			os.Exit(1)
 		}
 	}
 }
@@ -155,11 +153,13 @@ func (rb Rebuild) saveNameStrings(db *sql.DB, ns []NameString) int64 {
 		"parse_quality"}
 	transaction, err := db.Begin()
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("cannot start transaction", "error", err)
+		os.Exit(1)
 	}
 	stmt, err := transaction.Prepare(pq.CopyIn("name_strings", columns...))
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("cannot prepare copy", "error", err)
+		os.Exit(1)
 	}
 	for _, v := range ns {
 		_, err = stmt.Exec(v.ID, v.Name, v.Year, v.Cardinality, v.CanonicalID,
@@ -167,20 +167,24 @@ func (rb Rebuild) saveNameStrings(db *sql.DB, ns []NameString) int64 {
 			v.ParseQuality)
 	}
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("cannot insert rows", "error", err)
+		os.Exit(1)
 	}
 
 	_, err = stmt.Exec()
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("cannot run final exec for db", "error", err)
+		os.Exit(1)
 	}
 
 	err = stmt.Close()
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("cannot close exec", "error", err)
+		os.Exit(1)
 	}
 	if err = transaction.Commit(); err != nil {
-		log.Fatal(err)
+		slog.Error("cannot close postgres transaction", "error", err)
+		os.Exit(1)
 	}
 	return int64(len(ns))
 }
@@ -194,6 +198,7 @@ type ParsedData struct {
 func (rb Rebuild) workerNameString(kv *badger.DB, chIn <-chan []string,
 	chCan chan<- []CanonicalData, chOut chan<- []NameString, wg *sync.WaitGroup) {
 	var err error
+	var valBytes []byte
 	defer wg.Done()
 	enc := gnfmt.GNgob{}
 	kvTxn := kv.NewTransaction(true)
@@ -219,19 +224,22 @@ func (rb Rebuild) workerNameString(kv *badger.DB, chIn <-chan []string,
 			CanonicalFull:   canf,
 		}
 
-		valBytes, err := enc.Encode(val)
+		valBytes, err = enc.Encode(val)
 		if err != nil {
-			log.Fatal(err)
+			slog.Error("cannot encode parsed data", "error", err)
+			os.Exit(1)
 		}
 		if err = kvTxn.Set([]byte(key), []byte(valBytes)); err == badger.ErrTxnTooBig {
 			err = kvTxn.Commit()
 			if err != nil {
-				log.Fatal(err)
+				slog.Error("cannot commit key/value transaction", "error", err)
+				os.Exit(1)
 			}
 			kvTxn = kv.NewTransaction(true)
 			err = kvTxn.Set([]byte(key), []byte(valBytes))
 			if err != nil {
-				log.Fatal(err)
+				slog.Error("cannot set key/value", "error", err)
+				os.Exit(1)
 			}
 
 		}
@@ -314,7 +322,8 @@ func (rb Rebuild) workerNameString(kv *badger.DB, chIn <-chan []string,
 	}
 	err = kvTxn.Commit()
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("cannot commit key/value transaction", "error", err)
+		os.Exit(1)
 	}
 
 	chOut <- res[0:i]
@@ -325,7 +334,7 @@ func (rb Rebuild) loadNameStrings(chIn chan<- []string) {
 	path := filepath.Join(rb.DumpDir, "name_strings.csv")
 	f, err := os.Open(path)
 	if err != nil {
-		log.Printf("ERROR: %s", err.Error())
+		slog.Error("cannot open name_strings.csv", "error", err)
 	}
 	defer f.Close()
 	r := csv.NewReader(f)
@@ -333,7 +342,7 @@ func (rb Rebuild) loadNameStrings(chIn chan<- []string) {
 	// skip header
 	_, err = r.Read()
 	if err != nil {
-		log.Printf("ERROR: %s", err.Error())
+		slog.Error("cannot read the header name_strings", "error", err)
 	}
 	for {
 		row, err := r.Read()
@@ -341,7 +350,7 @@ func (rb Rebuild) loadNameStrings(chIn chan<- []string) {
 			break
 		}
 		if err != nil {
-			log.Printf("ERROR: %s", err.Error())
+			slog.Error("cannot read name_strings.csv", "error", err)
 		}
 		chIn <- row
 	}

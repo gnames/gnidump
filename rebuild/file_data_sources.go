@@ -3,7 +3,7 @@ package rebuild
 import (
 	"encoding/csv"
 	"io"
-	"log"
+	"log/slog"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -503,7 +503,7 @@ var DataSourcesInf = map[int]DataSourceInf{
 func (rb Rebuild) UploadDataSources() error {
 	db := rb.NewDbGorm()
 	defer db.Close()
-	log.Println("Populating data_sources table")
+	slog.Info("Populating data_sources table")
 	ds, err := rb.loadDataSources()
 	if err != nil {
 		return err
@@ -528,7 +528,7 @@ func (rb Rebuild) loadDataSources() ([]DataSource, error) {
 	// skip header
 	_, err = r.Read()
 	if err != nil {
-		log.Printf("ERROR: %s", err.Error())
+		slog.Error("Cannot read csv header", "error", err)
 	}
 	for {
 		row, err := r.Read()
@@ -536,7 +536,7 @@ func (rb Rebuild) loadDataSources() ([]DataSource, error) {
 			break
 		}
 		if err != nil {
-			log.Printf("ERROR: %s", err.Error())
+			slog.Error("Cannot read csv line", "error", err)
 		}
 		d, err := rowToDataSource(row)
 		if err != nil {

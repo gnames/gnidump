@@ -9,6 +9,7 @@ type Rebuild struct {
 	PgDB
 	DumpDir         string
 	ParserKeyValDir string
+	VernKeyValDir   string
 	JobsNum         int
 	Batch           int
 }
@@ -17,7 +18,15 @@ type Rebuild struct {
 func NewRebuild(pgDB PgDB, inputDir string, jobsNum int) Rebuild {
 	dumpDir := filepath.Join(inputDir, "gni-dump")
 	parserKVDir := filepath.Join(inputDir, "parser")
-	rb := Rebuild{PgDB: pgDB, DumpDir: dumpDir, ParserKeyValDir: parserKVDir,
-		JobsNum: jobsNum, Batch: 50_000}
+	vernKVDir := filepath.Join(inputDir, "vern")
+
+	rb := Rebuild{
+		PgDB:            pgDB,
+		DumpDir:         dumpDir,
+		ParserKeyValDir: parserKVDir,
+		VernKeyValDir:   vernKVDir,
+		JobsNum:         jobsNum,
+		Batch:           50_000,
+	}
 	return rb
 }

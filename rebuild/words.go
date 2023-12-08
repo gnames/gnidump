@@ -3,7 +3,8 @@ package rebuild
 import (
 	"database/sql"
 	"fmt"
-	"log"
+	"log/slog"
+	"os"
 	"strings"
 
 	"github.com/dustin/go-humanize"
@@ -14,15 +15,16 @@ import (
 )
 
 func (rb Rebuild) CreateWords() {
-	db := rb.PgDB.NewDb()
+	db := rb.NewDb()
 	defer db.Close()
 	q := `SELECT name
 					FROM name_strings`
 	rows, err := db.Query(q)
 	if err != nil {
-		log.Println(err)
+		slog.Error("Cannot get names from db", "error", err)
+		os.Exit(1)
 	}
-	log.Print("Processing names for words tables.")
+	slog.Info("Processing names for words tables")
 	rb.processWords(rows)
 }
 
@@ -51,7 +53,7 @@ func (rb Rebuild) processWords(rows *sql.Rows) {
 			names = names[:0]
 		}
 		if err := rows.Scan(&name); err != nil {
-			log.Println(err)
+			slog.Error("Cannot scan", "error", err)
 		} else {
 			names = append(names, name)
 		}
@@ -110,35 +112,41 @@ func (rb Rebuild) saveNameWords(wns []WordNameString) {
 	columns := []string{"word_id", "name_string_id", "canonical_id"}
 	transaction, err := db.Begin()
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Cannot start postgres transaction", "error", err)
+		os.Exit(1)
 	}
 	stmt, err := transaction.Prepare(pq.CopyIn("word_name_strings", columns...))
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Cannot prepare copy statement", "error", err)
+		os.Exit(1)
 	}
 	for _, v := range wns {
 		_, err = stmt.Exec(v.WordID, v.NameStringID, v.CanonicalID)
 	}
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Cannot save words to db", "error", err)
+		os.Exit(1)
 	}
 
 	_, err = stmt.Exec()
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Cannot run final exec for db", "error", err)
+		os.Exit(1)
 	}
 
 	err = stmt.Close()
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Cannot close exec", "error", err)
+		os.Exit(1)
 	}
 	if err = transaction.Commit(); err != nil {
-		log.Fatal(err)
+		slog.Error("Cannot close postgres transaction", "error", err)
+		os.Exit(1)
 	}
 }
 
 func (rb Rebuild) prepWords(nws map[string]Word) {
-	log.Printf("Saving %d words.\n", len(nws))
+	slog.Info("Saving words", "wordsNum", len(nws))
 	words := make([]Word, 0, batch)
 	var count int64
 	for _, v := range nws {
@@ -163,30 +171,36 @@ func (rb Rebuild) saveWords(ws []Word) {
 	columns := []string{"id", "normalized", "modified", "type_id"}
 	transaction, err := db.Begin()
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Cannot start postgres transaction", "error", err)
+		os.Exit(1)
 	}
 	stmt, err := transaction.Prepare(pq.CopyIn("words", columns...))
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Cannot prepare copy", "error", err)
+		os.Exit(1)
 	}
 	for _, v := range ws {
 		_, err = stmt.Exec(v.ID, v.Normalized, v.Modified, v.TypeID)
 	}
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Cannot save words", "error", err)
+		os.Exit(1)
 	}
 
 	_, err = stmt.Exec()
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Cannot run final exec", "error", err)
+		os.Exit(1)
 	}
 
 	err = stmt.Close()
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Cannot close copy", "error", err)
+		os.Exit(1)
 	}
 	if err = transaction.Commit(); err != nil {
-		log.Fatal(err)
+		slog.Error("Cannot commit transaction", "error", err)
+		os.Exit(1)
 	}
 }
 

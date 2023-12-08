@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"encoding/csv"
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -41,7 +41,7 @@ func (dmp Dump) CreateCSV() error {
 		return err
 	}
 
-	log.Println("CSV dump is created")
+	slog.Info("CSV dump is created")
 	return dmp.DB.Close()
 }
 
@@ -65,19 +65,16 @@ func (dmp Dump) updateDataSourcesDate() error {
 						  ON nsi.data_source_id = ds.id`
 	rows, err := dmp.DB.Query(q)
 	if err != nil {
-		log.Println("updateDataSourcesDate")
 		return err
 	}
 	for rows.Next() {
 		err := rows.Scan(&id)
 		if err != nil {
-			log.Println("updateDataSourcesDate")
 			return err
 		}
 		uq := fmt.Sprintf(update, id, id)
 		_, err = dmp.DB.Query(uq)
 		if err != nil {
-			log.Println("updateDataSourcesDate")
 			return err
 		}
 	}
@@ -85,7 +82,7 @@ func (dmp Dump) updateDataSourcesDate() error {
 }
 
 func (dmp Dump) dumpTableDataSources() error {
-	log.Print("Create data_sources.csv")
+	slog.Info("Create data_sources.csv")
 	q1 := `SELECT data_source_id, count(*)
 	          FROM name_string_indices
 						  GROUP BY data_source_id`
@@ -116,7 +113,8 @@ func collectDataSourceRecords(rows *sql.Rows) (map[int]int, error) {
 	defer func() {
 		err := rows.Close()
 		if err != nil {
-			log.Fatal(err)
+			slog.Error("Cannot close rows", "error", err)
+			os.Exit(1)
 		}
 	}()
 	for rows.Next() {
@@ -139,6 +137,9 @@ func (dmp Dump) handleDataSource(rows *sql.Rows, recNum map[int]int) error {
 	var createdAt, updatedAt time.Time
 	curated, autoCurated := qualityMaps()
 	file, err := dmp.csvFile("data_sources")
+	if err != nil {
+		return err
+	}
 	w := csv.NewWriter(file)
 
 	err = w.Write([]string{"id", "title", "description",
@@ -207,7 +208,7 @@ func qualityMaps() (map[int]byte, map[int]byte) {
 }
 
 func (dmp Dump) dumpTableNameStrings() error {
-	log.Print("Create name_strings.csv")
+	slog.Info("Create name_strings.csv")
 	q := `SELECT id, name
 					FROM name_strings`
 	rows, err := dmp.DB.Query(q)
@@ -259,7 +260,7 @@ func (dmp Dump) handleNameStrings(rows *sql.Rows) error {
 }
 
 func (dmp Dump) dumpTableNameStringIndices() error {
-	log.Print("Create name_string_indices.csv")
+	slog.Info("Create name_string_indices.csv")
 	q := `SELECT data_source_id, name_string_id,
 					url, taxon_id, global_id, local_id,
 					nomenclatural_code_id, rank,
@@ -332,7 +333,7 @@ func removeNewLines(data sql.NullString) string {
 }
 
 func (dmp Dump) dumpTableVernacularStrings() error {
-	log.Print("Create vernacular_strings.csv")
+	slog.Info("Create vernacular_strings.csv")
 	q := "SELECT id, name FROM vernacular_strings"
 	rows, err := dmp.DB.Query(q)
 	if err != nil {
@@ -374,7 +375,7 @@ func (dmp Dump) handleVernacularStrings(rows *sql.Rows) error {
 }
 
 func (dmp Dump) dumpTableVernacularStringIndices() error {
-	log.Print("Create vernacular_string_indices.csv")
+	slog.Info("Create vernacular_string_indices.csv")
 	q := `SELECT data_source_id, taxon_id,
 					vernacular_string_id, language, locality,
 					country_code
@@ -421,7 +422,8 @@ func (dmp Dump) handleVernacularStringIndices(rows *sql.Rows) error {
 			language.String, locality.String, countryCode.String}
 
 		if err := w.Write(csvRow); err != nil {
-			log.Fatal(err)
+			slog.Error("Cannot write to CSV file", "error", err)
+			os.Exit(1)
 		}
 	}
 	w.Flush()

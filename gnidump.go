@@ -1,7 +1,8 @@
 package gnidump
 
 import (
-	"log"
+	"log/slog"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -33,7 +34,8 @@ func NewGNIdump(opts ...Option) GNIdump {
 		strings.HasPrefix(gnd.InputDir, "~\\") {
 		home, err := homedir.Dir()
 		if err != nil {
-			log.Fatal(err)
+			slog.Error("Cannot find home directory", "error", err)
+			os.Exit(1)
 		}
 		gnd.InputDir = filepath.Join(home, gnd.InputDir[2:])
 	}
@@ -60,21 +62,21 @@ func OptJobsNum(j int) Option {
 // OptMyHost sets host for MySQL
 func OptMyHost(h string) Option {
 	return func(gnd *GNIdump) {
-		gnd.MyDB.MyHost = h
+		gnd.MyHost = h
 	}
 }
 
 // OptMyUser sets user for MySQL
 func OptMyUser(u string) Option {
 	return func(gnd *GNIdump) {
-		gnd.MyDB.MyUser = u
+		gnd.MyUser = u
 	}
 }
 
 // OptMyPass sets password for MySQL
 func OptMyPass(p string) Option {
 	return func(gnd *GNIdump) {
-		gnd.MyDB.MyPass = p
+		gnd.MyPass = p
 	}
 }
 
@@ -88,21 +90,21 @@ func OptMyDB(d string) Option {
 // OptPgHost sets host name for PostgreSQL
 func OptPgHost(h string) Option {
 	return func(gnd *GNIdump) {
-		gnd.PgDB.PgHost = h
+		gnd.PgHost = h
 	}
 }
 
 // OptPgUser sets user for PostgreSQL
 func OptPgUser(u string) Option {
 	return func(gnd *GNIdump) {
-		gnd.PgDB.PgUser = u
+		gnd.PgUser = u
 	}
 }
 
 // OptPgPass sets password for PostgreSQL
 func OptPgPass(p string) Option {
 	return func(gnd *GNIdump) {
-		gnd.PgDB.PgPass = p
+		gnd.PgPass = p
 	}
 }
 

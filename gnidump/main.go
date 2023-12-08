@@ -20,8 +20,16 @@
 
 package main
 
-import "github.com/gnames/gnidump/gnidump/cmd"
+import (
+	"log/slog"
+	"os"
+
+	"github.com/gnames/gnidump/gnidump/cmd"
+	"github.com/lmittmann/tint"
+)
 
 func main() {
+	handle := slog.New(tint.NewHandler(os.Stderr, nil))
+	slog.SetDefault(handle)
 	cmd.Execute()
 }
