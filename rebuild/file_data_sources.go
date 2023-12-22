@@ -486,6 +486,17 @@ var DataSourcesInf = map[int]DataSourceInf{
 			return n.LocalID
 		},
 	},
+	209: {
+		TitleShort:     "NZOR",
+		UUID:           "365ee637-7189-4551-a52a-74aa79d3ee2f",
+		HomeURL:        "https://www.nzor.org.nz/",
+		DataURL:        "https://www.nzor.org.nz/downloads",
+		IsOutlinkReady: true,
+		OutlinkURL:     "https://www.nzor.org.nz/names/{}",
+		OutlinkID: func(n NameInf) string {
+			return n.RecordID
+		},
+	},
 }
 
 // UploadDataSources populates data_sources table with data.
