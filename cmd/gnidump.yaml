@@ -1,31 +1,40 @@
 ---
 
-# Path to keep downloaded data and key-value stores
-InputDir: /tmp/bhlnames
+# InputDir is the root directory to keep gnidump data.
+#
+# InputDir: ~/.cache
 
-# MySQL host
-MyHost: localhost
+# MyHost is the MySQL host of the  GNresolver database.
+#
+# MyHost: 0.0.0.0
 
-# MySQL user
-MyUser: root
+# MyUser is the MySQL user.
+#
+# MyUser: root
 
-# MySQL password
-MyPass:
+# MyPass is the MySQL password.
+#
+# MyPass:
 
-# MySQL database
-MyDB: gni
+# MyDB is the MySQL database of GNresolver.
+#
+# MyDB: gni
 
-# Postgresql host
-PgHost: localhost
+# PgHost is the PostgreSQL host for GNames database.
+#
+# PgHost: 0.0.0.0
 
-# Postgresql user
-PgUser: postgres
+# PgUser is the PostgreSQL user
+#
+# PgUser: postgres
 
-# Postgresql password
-PgPass:
+# PgPass is the PostgreSQL password
+#
+# PgPass: postgres
 
-# Postgresql database
-PgDB: gnindex
+# PgDB is the name of GNames' PostgreSQL database
+#
+# PgDB: gnames
 
-# Number of jobs for parallel tasks
-JobsNum: 1
+# JobsNum is the number of jobs for parallel tasks
+# JobsNum: 4

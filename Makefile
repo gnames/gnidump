@@ -6,12 +6,12 @@ DATE = $(shell date -u '+%Y-%m-%d_%H:%M:%S%Z')
 NO_C = CGO_ENABLED=0
 
 FLAGS_SHARED = $(NO_C)
-FLAGS_LD=-ldflags "-X github.com/gnames/$(PROJ_NAME)/pkg.Build=${DATE} \
-                  -X github.com/gnames/$(PROJ_NAME)/pkg.Version=${VERSION}"
+FLAGS_LD = -ldflags "-X github.com/gnames/$(PROJ_NAME)/pkg.Build=$(DATE) \
+                     -X github.com/gnames/$(PROJ_NAME)/pkg.Version=$(VERSION)"
 
 GOCMD=go
-GOINSTALL=$(GOCMD) install $(FLAGS_LD)
-GOBUILD=$(GOCMD) build $(FLAGS_LD)
+GOINSTALL=$(GOCMD) install
+GOBUILD=$(GOCMD) build
 GOCLEAN=$(GOCMD) clean
 
 all: install
@@ -31,10 +31,9 @@ tools: deps ## Install tools
 
 ## Build:
 build: ## Build binary
-	$(FLAGS_SHARED) $(GOBUILD) -o $(PROJ_NAME) $(FLAGS_LD) \
-		.
+	$(FLAGS_SHARED) $(GOBUILD)  $(PROJ_NAME) $(FLAGS_LD)
 
 ## Install:
 install: ## Build and install binary
-	$(FLAGS_SHARED) $(GOINSTALL)
+	$(NO_C) $(GOINSTALL)
 

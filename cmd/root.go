@@ -34,7 +34,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-// go:embed gnidump.yaml
+//go:embed gnidump.yaml
 var configText string
 
 var (
@@ -75,6 +75,8 @@ to quickly create a Cobra application.`,
 			fmt.Printf("\nversion: %s\nbuild: %s\n\n", gnidump.Version, gnidump.Build)
 			os.Exit(0)
 		}
+
+		fmt.Println("YML " + configText)
 
 		if len(args) == 0 {
 			_ = cmd.Help()
