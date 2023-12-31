@@ -1,0 +1,40 @@
+---
+
+# InputDir is the root directory to keep gnidump data.
+#
+# InputDir: ~/.cache
+
+# MyHost is the MySQL host of the  GNresolver database.
+#
+# MyHost: 0.0.0.0
+
+# MyUser is the MySQL user.
+#
+# MyUser: root
+
+# MyPass is the MySQL password.
+#
+# MyPass:
+
+# MyDB is the MySQL database of GNresolver.
+#
+# MyDB: gni
+
+# PgHost is the PostgreSQL host for GNames database.
+#
+# PgHost: 0.0.0.0
+
+# PgUser is the PostgreSQL user
+#
+# PgUser: postgres
+
+# PgPass is the PostgreSQL password
+#
+# PgPass: postgres
+
+# PgDB is the name of GNames' PostgreSQL database
+#
+# PgDB: gnames
+
+# JobsNum is the number of jobs for parallel tasks
+# JobsNum: 4
