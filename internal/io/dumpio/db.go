@@ -15,7 +15,7 @@ import (
 
 // NewDb creates a handler for interaction with MySQL database.
 func (d *dumpio) initDb() *sql.DB {
-	db, err := sql.Open("mysql", d.opts())
+	db, err := sql.Open("mysql", d.dbURI())
 	if err != nil {
 		slog.Error("Cannot connect to database", "error", err)
 		os.Exit(1)
@@ -23,7 +23,7 @@ func (d *dumpio) initDb() *sql.DB {
 	return db
 }
 
-func (d *dumpio) opts() string {
+func (d *dumpio) dbURI() string {
 	url := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?parseTime=true",
 		d.cfg.MyUser, d.cfg.MyPass, d.cfg.MyHost, 3306, d.cfg.MyDB)
 	return url

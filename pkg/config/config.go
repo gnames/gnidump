@@ -12,20 +12,56 @@ var (
 	autoCuratedAry = []int{11, 12, 158, 170, 179, 186, 194, 196, 206, 207}
 )
 
+// Config is a struct that holds configuration parameters for the package.
 type Config struct {
-	InputDir    string
-	DumpDir     string
-	JobsNum     int
-	MyHost      string
-	MyUser      string
-	MyPass      string
-	MyDB        string
-	PgHost      string
-	PgUser      string
-	PgPass      string
-	PgDB        string
-	Curated     []int
+	// InputDir is a directory for temporary files and key-value stores.
+	InputDir string
+
+	// DumpDir is a directory to keep CSV dump files.
+	DumpDir string
+
+	// SciKVDir is a directory to keep key-value store for scientific names.
+	SciKVDir string
+
+	// VernKVDir is a directory to keep key-value store for vernacular names.
+	VernKVDir string
+
+	// JobsNum is a number of concurrent goroutines.
+	JobsNum int
+
+	// MyHost is a host name for MySQL.
+	MyHost string
+
+	// MyUser is a user name for MySQL.
+	MyUser string
+
+	// MyPass is a password for MySQL.
+	MyPass string
+
+	// MyDB is a database name for MySQL.
+	MyDB string
+
+	// PgHost is a host name for PostgreSQL.
+	PgHost string
+
+	// PgUser is a user name for PostgreSQL.
+	PgUser string
+
+	// PgPass is a password for PostgreSQL.
+	PgPass string
+
+	// PgDB is a database name for PostgreSQL.
+	PgDB string
+
+	// Curated is a list of data-sources IDs we consider to be curated by humans.
+	Curated []int
+
+	// AutoCurated is a list of data-sources IDs we consider to be curated by
+	// machines.
 	AutoCurated []int
+
+	// BatchSize is a number of records to be saved in one transaction.
+	BatchSize int
 }
 
 // Option type allows to change settings for Config.
@@ -111,6 +147,8 @@ func New(opts ...Option) Config {
 	res := Config{
 		InputDir:    inpDir,
 		DumpDir:     filepath.Join(inpDir, "gni-dump"),
+		SciKVDir:    filepath.Join(inpDir, "sci"),
+		VernKVDir:   filepath.Join(inpDir, "vern"),
 		JobsNum:     4,
 		MyDB:        "gni",
 		PgHost:      "0.0.0.0",
@@ -119,6 +157,7 @@ func New(opts ...Option) Config {
 		PgDB:        "gnames",
 		Curated:     curatedAry,
 		AutoCurated: autoCuratedAry,
+		BatchSize:   50_000,
 	}
 
 	for _, opt := range opts {

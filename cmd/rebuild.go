@@ -20,6 +20,7 @@ import (
 	"os"
 
 	"github.com/gnames/gnidump/internal/io/buildio"
+	"github.com/gnames/gnidump/internal/io/kvio"
 	gnidump "github.com/gnames/gnidump/pkg"
 	"github.com/gnames/gnidump/pkg/config"
 	"github.com/spf13/cobra"
@@ -32,7 +33,9 @@ var rebuildCmd = &cobra.Command{
 	Run: func(_ *cobra.Command, _ []string) {
 		cfg := config.New(opts...)
 		gnd := gnidump.New(cfg)
-		b := buildio.New(cfg)
+		kvSci := kvio.New(cfg.SciKVDir)
+		kvVern := kvio.New(cfg.VernKVDir)
+		b := buildio.New(cfg, kvSci, kvVern)
 
 		err := gnd.Build(b)
 		if err != nil {
