@@ -214,10 +214,10 @@ func (d dumpio) handleNameStrings(rows *sql.Rows) error {
 			fmt.Printf("\r%s", strings.Repeat(" ", 35))
 			fmt.Printf("\rDownloaded %s names to a CSV file", humanize.Comma(count))
 		}
-		if err := rows.Scan(&id, &name); err != nil {
+		if err = rows.Scan(&id, &name); err != nil {
 			return err
 		}
-		name := strings.Replace(name, "\u0000", "", -1)
+		name = strings.ReplaceAll(name, "\u0000", "")
 		csvRow := []string{id, name}
 
 		err = w.Write(csvRow)
@@ -303,7 +303,7 @@ func (d *dumpio) handleNameStringIndices(rows *sql.Rows) error {
 
 func removeNewLines(data sql.NullString) string {
 	str := data.String
-	return strings.Replace(str, "\n", "", -1)
+	return strings.ReplaceAll(str, "\n", "")
 }
 
 func (d *dumpio) dumpTableVernacularStrings() error {
@@ -361,6 +361,7 @@ func (d *dumpio) dumpTableVernacularStringIndices() error {
 	}
 	return d.handleVernacularStringIndices(rows)
 }
+
 func (d *dumpio) handleVernacularStringIndices(rows *sql.Rows) error {
 	var dataSourceID, taxonID, vernacularStringID string
 	var language, locality, countryCode sql.NullString
