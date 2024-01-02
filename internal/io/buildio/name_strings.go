@@ -17,6 +17,7 @@ import (
 	"github.com/dustin/go-humanize"
 	"github.com/gnames/gnfmt"
 	"github.com/gnames/gnidump/internal/ent/model"
+	"github.com/gnames/gnidump/internal/str"
 	"github.com/gnames/gnparser"
 	"github.com/gnames/gnparser/ent/parsed"
 	"github.com/gnames/gnuuid"
@@ -47,19 +48,28 @@ type ParsedData struct {
 
 func (b *buildio) importNameStrings() {
 	slog.Info("Importing name-strings")
+
+	err := b.kvSci.Open()
+	if err != nil {
+		slog.Error("cannot open key-value store", "error", err)
+		os.Exit(1)
+	}
+	defer b.kvSci.Close()
+
 	chIn := make(chan []string)
 	chCan := make(chan []CanonicalData)
 	chOut := make(chan []model.NameString)
 	var wg sync.WaitGroup
 	var wg2 sync.WaitGroup
-	wg.Add(b.cfg.JobsNum)
 	wg2.Add(1)
+
 	go b.loadNameStrings(chIn)
 	for i := 0; i < b.cfg.JobsNum; i++ {
 		wg.Add(1)
 		go b.workerNameString(chIn, chCan, chOut, &wg)
 	}
 	go b.dbNameString(chOut, chCan, &wg2)
+
 	wg.Wait()
 	close(chOut)
 	close(chCan)
@@ -107,7 +117,11 @@ func (b *buildio) workerNameString(
 	var valBytes []byte
 	defer wg.Done()
 	enc := gnfmt.GNgob{}
-	kvTxn := b.kvSci.NewTransaction(true)
+	kvTxn, err := b.kvSci.GetTransaction()
+	if err != nil {
+		slog.Error("cannot make key-val transaction", "error", err)
+		os.Exit(1)
+	}
 
 	cfg := gnparser.NewConfig()
 	gnp := gnparser.New(cfg)
@@ -140,7 +154,11 @@ func (b *buildio) workerNameString(
 			if err != nil {
 				slog.Error("cannot commit key/value transaction", "error", err)
 			}
-			kvTxn = b.kvSci.NewTransaction(true)
+			kvTxn, err = b.kvSci.GetTransaction()
+			if err != nil {
+				slog.Error("cannot make key-val transaction", "error", err)
+				os.Exit(1)
+			}
 			err = kvTxn.Set([]byte(key), []byte(valBytes))
 			if err != nil {
 				slog.Error("cannot set key/value", "error", err)
@@ -213,6 +231,7 @@ func (b *buildio) workerNameString(
 			Surrogate:       surrogate,
 			ParseQuality:    int(p.ParseQuality),
 		}
+
 		if i < b.cfg.BatchSize {
 			res[i] = n
 		} else {
@@ -271,10 +290,13 @@ func (b *buildio) dbNameString(
 }
 
 func (b *buildio) saveNameStrings(ns []model.NameString) int64 {
+	db := pgConn(b.cfg)
+	defer db.Close()
+
 	columns := []string{"id", "name", "year", "cardinality", "canonical_id",
 		"canonical_full_id", "canonical_stem_id", "virus", "bacteria", "surrogate",
 		"parse_quality"}
-	transaction, err := b.db.Begin()
+	transaction, err := db.Begin()
 	if err != nil {
 		slog.Error("cannot start transaction", "error", err)
 		os.Exit(1)
@@ -288,10 +310,10 @@ func (b *buildio) saveNameStrings(ns []model.NameString) int64 {
 		_, err = stmt.Exec(v.ID, v.Name, v.Year, v.Cardinality, v.CanonicalID,
 			v.CanonicalFullID, v.CanonicalStemID, v.Virus, v.Bacteria, v.Surrogate,
 			v.ParseQuality)
-	}
-	if err != nil {
-		slog.Error("cannot insert rows", "error", err)
-		os.Exit(1)
+		if err != nil {
+			slog.Error("cannot insert rows", "error", err)
+			os.Exit(1)
+		}
 	}
 
 	_, err = stmt.Exec()
@@ -313,39 +335,42 @@ func (b *buildio) saveNameStrings(ns []model.NameString) int64 {
 }
 
 func (b *buildio) saveCanonicals(cs []CanonicalData) {
+	db := pgConn(b.cfg)
+	defer db.Close()
+
 	var err error
 	cal := make([]string, len(cs))
 	calFull := make([]string, 0, len(cs))
 	calStem := make([]string, 0, len(cs))
 	for i, v := range cs {
-		cal[i] = fmt.Sprintf("('%s', %s)", v.ID, quoteString(v.Value))
+		cal[i] = fmt.Sprintf("('%s', %s)", v.ID, str.QuoteString(v.Value))
 
 		if v.FullID != "" {
 			calFull = append(calFull,
-				fmt.Sprintf("('%s', %s)", v.FullID, quoteString(v.FullValue)))
+				fmt.Sprintf("('%s', %s)", v.FullID, str.QuoteString(v.FullValue)))
 		}
 		if v.StemID != "" {
 			calStem = append(calStem,
-				fmt.Sprintf("('%s', %s)", v.StemID, quoteString(v.StemValue)))
+				fmt.Sprintf("('%s', %s)", v.StemID, str.QuoteString(v.StemValue)))
 		}
 	}
 
 	q0 := `INSERT INTO %s (id, name) VALUES %s ON CONFLICT DO NOTHING`
 	q := fmt.Sprintf(q0, "canonicals", strings.Join(cal, ","))
-	if _, err = b.db.Query(q); err != nil {
+	if _, err = db.Query(q); err != nil {
 		slog.Error("save canonicals failed", "error", err)
 		os.Exit(1)
 	}
 	if len(calFull) > 0 {
 		q = fmt.Sprintf(q0, "canonical_fulls", strings.Join(calFull, ","))
-		if _, err = b.db.Query(q); err != nil {
+		if _, err = db.Query(q); err != nil {
 			slog.Error("save canonical_fulls failed", "error", err)
 			os.Exit(1)
 		}
 	}
 	if len(calStem) > 0 {
 		q = fmt.Sprintf(q0, "canonical_stems", strings.Join(calStem, ","))
-		if _, err = b.db.Query(q); err != nil {
+		if _, err = db.Query(q); err != nil {
 			slog.Error("save canonical_stems failed", "error", err)
 			os.Exit(1)
 		}
@@ -363,8 +388,4 @@ func parseYear(p parsed.Parsed) sql.NullInt16 {
 		return res
 	}
 	return sql.NullInt16{Int16: int16(yrInt), Valid: true}
-}
-
-func quoteString(s string) string {
-	return "'" + strings.Replace(s, "'", "''", -1) + "'"
 }

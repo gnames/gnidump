@@ -33,3 +33,14 @@ func opts(cfg config.Config) string {
 	return fmt.Sprintf("host=%s user=%s password=%s dbname=%s sslmode=disable",
 		cfg.PgHost, cfg.PgUser, cfg.PgPass, cfg.PgDB)
 }
+
+func (b *buildio) truncateTable(tbl string) {
+	db := pgConn(b.cfg)
+	defer db.Close()
+
+	_, err := db.Exec("TRUNCATE TABLE " + tbl)
+	if err != nil {
+		slog.Error("cannot truncate table", "table", tbl, "error", err)
+		os.Exit(1)
+	}
+}

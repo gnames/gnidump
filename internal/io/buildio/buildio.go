@@ -1,11 +1,9 @@
 package buildio
 
 import (
-	"database/sql"
 	"log/slog"
 	"os"
 
-	"github.com/dgraph-io/badger/v2"
 	"github.com/gnames/gnidump/internal/ent/build"
 	"github.com/gnames/gnidump/internal/ent/kv"
 	"github.com/gnames/gnidump/internal/io/modelio"
@@ -15,9 +13,8 @@ import (
 // buildio is a struct that implements build.Builder interface.
 type buildio struct {
 	cfg    config.Config
-	db     *sql.DB
-	kvSci  *badger.DB
-	kvVern *badger.DB
+	kvSci  kv.KeyVal
+	kvVern kv.KeyVal
 }
 
 // New returns a new instance of Builder
@@ -26,27 +23,23 @@ func New(
 	kvSci, kvVern kv.KeyVal) build.Builder {
 	res := buildio{
 		cfg:    cfg,
-		kvSci:  kvSci.DB(),
-		kvVern: kvVern.DB(),
+		kvSci:  kvSci,
+		kvVern: kvVern,
 	}
-	res.db = pgConn(cfg)
-
 	res.resetDB()
 	res.migrate()
-
 	return res
 }
 
 // Build creates a new PostgreSQL database from CSV dump files.
 func (b buildio) Build() error {
-	b.importNameStrings()
-	b.importDataSources()
+	// TODO UNCOMMENT
+	// b.importNameStrings()
+	// b.importDataSources()
 	b.importNameIndices()
-	b.kvSci.Close()
 
 	b.importVern()
 	b.importVernIndices()
-	b.kvVern.Close()
 
 	b.removeOrphans()
 	b.createWords()
