@@ -28,21 +28,28 @@ func New(
 	}
 	res.resetDB()
 	res.migrate()
-	return res
+	return &res
 }
 
 // Build creates a new PostgreSQL database from CSV dump files.
-func (b buildio) Build() error {
-	b.importNameStrings()
-	b.importDataSources()
-	b.importNameIndices()
+func (b *buildio) Build() error {
+	var err error
+	// b.importNameIndices()
+	// b.importNameStrings()
+	// b.importDataSources()
 
-	b.importVern()
-	b.importVernIndices()
+	if err = b.importVern(); err != nil {
+		slog.Error("Cannot import vernacular_strings", "error", err)
+		return err
+	}
+	if err = b.importVernIndices(); err != nil {
+		slog.Error("Cannot import vernacular_indices", "error", err)
+		return err
+	}
 
-	b.removeOrphans()
-	b.createWords()
-	b.createVerification()
+	// b.removeOrphans()
+	// b.createWords()
+	// b.createVerification()
 	return nil
 }
 
