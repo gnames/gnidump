@@ -31,11 +31,14 @@ func New(
 	return &res
 }
 
-// Build creates a new PostgreSQL database from CSV dump files.
+// Build reads CSV dump files and imports their data to Postgres DB.
 func (b *buildio) Build() error {
 	var err error
+	if err = b.importNameStrings(); err != nil {
+		slog.Error("Cannot import name-strings", "error", err)
+		return err
+	}
 	// b.importNameIndices()
-	// b.importNameStrings()
 	// b.importDataSources()
 
 	if err = b.importVern(); err != nil {

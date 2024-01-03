@@ -136,7 +136,7 @@ func (b *buildio) workerVernString(
 		case <-ctx.Done():
 			return ctx.Err()
 		default:
-			vrn, kvTxn, err = b.processRow(kvTxn, row)
+			vrn, kvTxn, err = b.processVernRow(kvTxn, row)
 			if err != nil {
 				return err
 			}
@@ -196,7 +196,7 @@ func (b *buildio) dbVernString(
 	return nil
 }
 
-func (b *buildio) processRow(
+func (b *buildio) processVernRow(
 	kvTxn *badger.Txn,
 	row []string,
 ) (model.VernacularString, *badger.Txn, error) {

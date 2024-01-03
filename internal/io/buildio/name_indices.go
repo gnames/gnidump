@@ -147,7 +147,7 @@ func (b *buildio) workerNameStringIndex(chIn <-chan []string,
 		if err != nil {
 			codeID = 0
 		}
-		var parsed ParsedData
+		var parsed parsedData
 		parsedBytes, err := b.kvSci.GetValue([]byte(row[nsiNameStringIDF]))
 		if err != nil {
 			slog.Error("Cannot get Value", "error", err,

@@ -1,6 +1,7 @@
 package buildio
 
 import (
+	"context"
 	"database/sql"
 	"encoding/csv"
 	"fmt"
@@ -10,7 +11,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/dgraph-io/badger/v2"
@@ -22,6 +22,7 @@ import (
 	"github.com/gnames/gnparser/ent/parsed"
 	"github.com/gnames/gnuuid"
 	"github.com/lib/pq"
+	"golang.org/x/sync/errgroup"
 )
 
 const (
@@ -29,8 +30,8 @@ const (
 	nsNameF = 1
 )
 
-// Canonical Data provides data about various canonical forms of a name-string.
-type CanonicalData struct {
+// canonical Data provides data about various canonical forms of a name-string.
+type canonicalData struct {
 	ID          string
 	Value       string
 	FullID      string
@@ -40,233 +41,293 @@ type CanonicalData struct {
 	Cardinality int
 }
 
-type ParsedData struct {
+// parsedData provides data about parsed name-strings.
+type parsedData struct {
 	ID              string
 	CanonicalSimple string
 	CanonicalFull   string
 }
 
-func (b *buildio) importNameStrings() {
+func (b *buildio) importNameStrings() error {
 	slog.Info("Importing name-strings")
 
 	err := b.kvSci.Open()
 	if err != nil {
 		slog.Error("cannot open key-value store", "error", err)
-		os.Exit(1)
+		return err
 	}
 	defer b.kvSci.Close()
 
+	_ = b.truncateTable("name_strings")
+
 	chIn := make(chan []string)
-	chCan := make(chan []CanonicalData)
+	chCan := make(chan []canonicalData)
 	chOut := make(chan []model.NameString)
-	var wg sync.WaitGroup
-	var wg2 sync.WaitGroup
-	wg2.Add(1)
 
-	go b.loadNameStrings(chIn)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	g, ctx := errgroup.WithContext(ctx)
+
+	g.Go(func() error {
+		defer close(chIn)
+		return b.loadNameStrings(ctx, chIn)
+	})
 	for i := 0; i < b.cfg.JobsNum; i++ {
-		wg.Add(1)
-		go b.workerNameString(chIn, chCan, chOut, &wg)
+		g.Go(func() error {
+			defer close(chOut)
+			return b.workerNameString(ctx, chIn, chCan, chOut)
+		})
 	}
-	go b.dbNameString(chOut, chCan, &wg2)
+	g.Go(func() error {
+		return b.dbNameString(ctx, chOut, chCan)
+	})
 
-	wg.Wait()
-	close(chOut)
-	close(chCan)
-	wg2.Wait()
+	if err := g.Wait(); err != nil {
+		slog.Error("error in goroutines", "error", err)
+		return err
+	}
+
 	slog.Info("Uploaded name_strings table")
+	return nil
 }
 
-func (b *buildio) loadNameStrings(chIn chan<- []string) {
-	path := filepath.Join(b.cfg.DumpDir, "name_strings.csv")
-	f, err := os.Open(path)
+func (b *buildio) loadNameStrings(ctx context.Context, chIn chan<- []string) error {
+	r, f, err := b.openCSV("name_strings.csv")
 	if err != nil {
-		slog.Error("cannot open name_strings.csv", "error", err)
-		os.Exit(1)
+		return err
 	}
 	defer f.Close()
-	r := csv.NewReader(f)
 
 	// skip header
 	_, err = r.Read()
 	if err != nil {
 		slog.Error("cannot read the header name_strings", "error", err)
-		os.Exit(1)
+		return err
 	}
+
 	for {
-		row, err := r.Read()
-		if err == io.EOF {
-			break
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+			row, err := r.Read()
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				slog.Error("cannot read name_strings.csv", "error", err)
+				return err
+			}
+			chIn <- row
 		}
-		if err != nil {
-			slog.Error("cannot read name_strings.csv", "error", err)
-			os.Exit(1)
-		}
-		chIn <- row
 	}
-	close(chIn)
 }
 
 // workerNameString parses name-strings and prepares for the database.
 func (b *buildio) workerNameString(
+	ctx context.Context,
 	chIn <-chan []string,
-	chCan chan<- []CanonicalData,
+	chCan chan<- []canonicalData,
 	chOut chan<- []model.NameString,
-	wg *sync.WaitGroup,
-) {
+) error {
 	var err error
-	var valBytes []byte
-	defer wg.Done()
-	enc := gnfmt.GNgob{}
+	var n model.NameString
+	var c canonicalData
+
+	gnpCfg := gnparser.NewConfig()
+	gnp := gnparser.New(gnpCfg)
+
 	kvTxn, err := b.kvSci.GetTransaction()
 	if err != nil {
 		slog.Error("cannot make key-val transaction", "error", err)
-		os.Exit(1)
+		return err
 	}
 
-	cfg := gnparser.NewConfig()
-	gnp := gnparser.New(cfg)
 	res := make([]model.NameString, b.cfg.BatchSize)
-	cans := make([]CanonicalData, 0, b.cfg.BatchSize)
+	cans := make([]canonicalData, 0, b.cfg.BatchSize)
 	i := 0
-	for row := range chIn {
-		id := row[nsIDF]
-		p := gnp.ParseName(row[nsNameF])
-		key := id
-
-		var can, canf string
-		if p.Parsed {
-			can = p.Canonical.Simple
-			canf = p.Canonical.Full
-		}
-		val := ParsedData{
-			ID:              p.VerbatimID,
-			CanonicalSimple: can,
-			CanonicalFull:   canf,
-		}
-
-		valBytes, err = enc.Encode(val)
-		if err != nil {
-			slog.Error("cannot encode parsed data", "error", err)
-			os.Exit(1)
-		}
-		if err = kvTxn.Set([]byte(key), []byte(valBytes)); err == badger.ErrTxnTooBig {
-			err = kvTxn.Commit()
+loop:
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case row, ok := <-chIn:
+			if !ok {
+				break loop
+			}
+			n, c, kvTxn, err = b.processSciRow(gnp, kvTxn, row)
 			if err != nil {
-				slog.Error("cannot commit key/value transaction", "error", err)
-			}
-			kvTxn, err = b.kvSci.GetTransaction()
-			if err != nil {
-				slog.Error("cannot make key-val transaction", "error", err)
-				os.Exit(1)
-			}
-			err = kvTxn.Set([]byte(key), []byte(valBytes))
-			if err != nil {
-				slog.Error("cannot set key/value", "error", err)
-				os.Exit(1)
+				return err
 			}
 
-		}
-		var canonicalID, canonicalFullID, canonicalStemID sql.NullString
-		var cardinality sql.NullInt32
-		var year sql.NullInt16
-		if p.Parsed {
-			cardinality = sql.NullInt32{
-				Int32: int32(p.Cardinality),
-				Valid: true,
+			if c.Cardinality > 0 {
+				cans = append(cans, c)
 			}
-			year = parseYear(p)
-			val := p.Canonical.Simple
-			canonicalID = sql.NullString{
-				String: gnuuid.New(val).String(),
-				Valid:  true,
+
+			if i < b.cfg.BatchSize {
+				res[i] = n
+			} else {
+				chOut <- res
+				chCan <- cans
+				i = 0
+				res = make([]model.NameString, b.cfg.BatchSize)
+				cans = make([]canonicalData, 0, b.cfg.BatchSize)
+				res[i] = n
 			}
-			canData := CanonicalData{ID: canonicalID.String, Value: val, Cardinality: int(p.Cardinality)}
-
-			if p.Canonical.Simple != p.Canonical.Full {
-				val = p.Canonical.Full
-				canonicalFullID = sql.NullString{
-					String: gnuuid.New(val).String(),
-					Valid:  true,
-				}
-				canData.FullID = canonicalFullID.String
-				canData.FullValue = val
-			}
-			// Save stems of uninomials as well, we will use them for
-			// exact matching to remove false positives from bloom filters.
-			if p.Cardinality > 0 && !strings.Contains(canData.Value, ".") {
-				val = p.Canonical.Stemmed
-				canonicalStemID = sql.NullString{
-					String: gnuuid.New(val).String(),
-					Valid:  true,
-				}
-				canData.StemID = canonicalStemID.String
-				canData.StemValue = val
-			}
-			cans = append(cans, canData)
+			i++
 		}
-
-		var bacteria, virus bool
-		if p.Virus {
-			virus = true
-		}
-
-		if p.Bacteria != nil && p.Bacteria.String() == "yes" {
-			bacteria = true
-		}
-
-		var surrogate bool
-		if p.Surrogate != nil {
-			surrogate = true
-		}
-		n := model.NameString{
-			ID:              p.VerbatimID,
-			Name:            p.Verbatim,
-			Cardinality:     cardinality,
-			Year:            year,
-			CanonicalID:     canonicalID,
-			CanonicalFullID: canonicalFullID,
-			CanonicalStemID: canonicalStemID,
-			Virus:           virus,
-			Bacteria:        bacteria,
-			Surrogate:       surrogate,
-			ParseQuality:    int(p.ParseQuality),
-		}
-
-		if i < b.cfg.BatchSize {
-			res[i] = n
-		} else {
-			chOut <- res
-			chCan <- cans
-			i = 0
-			res = make([]model.NameString, b.cfg.BatchSize)
-			cans = make([]CanonicalData, 0, b.cfg.BatchSize)
-			res[i] = n
-		}
-		i++
 	}
 	err = kvTxn.Commit()
 	if err != nil {
 		slog.Error("cannot commit key/value transaction", "error", err)
-		os.Exit(1)
+		return err
 	}
 
 	chOut <- res[0:i]
 	chCan <- cans
+	return nil
+}
+
+func (b *buildio) processSciRow(
+	gnp gnparser.GNparser,
+	kvTxn *badger.Txn,
+	row []string,
+) (model.NameString, canonicalData, *badger.Txn, error) {
+	var err error
+	var valBytes []byte
+	var n model.NameString
+	var c canonicalData
+
+	enc := gnfmt.GNgob{}
+	id := row[nsIDF]
+	p := gnp.ParseName(row[nsNameF])
+	key := id
+
+	var can, canf string
+	if p.Parsed {
+		can = p.Canonical.Simple
+		canf = p.Canonical.Full
+	}
+	val := parsedData{
+		ID:              p.VerbatimID,
+		CanonicalSimple: can,
+		CanonicalFull:   canf,
+	}
+
+	valBytes, err = enc.Encode(val)
+	if err != nil {
+		slog.Error("cannot encode parsed data", "error", err)
+		return n, c, kvTxn, err
+	}
+	if err = kvTxn.Set([]byte(key), []byte(valBytes)); err == badger.ErrTxnTooBig {
+		err = kvTxn.Commit()
+		if err != nil {
+			slog.Error("cannot commit key/value transaction", "error", err)
+		}
+		kvTxn, err = b.kvSci.GetTransaction()
+		if err != nil {
+			slog.Error("cannot recreate key-val transaction", "error", err)
+			return n, c, kvTxn, err
+		}
+		err = kvTxn.Set([]byte(key), []byte(valBytes))
+		if err != nil {
+			slog.Error("cannot set key/value", "error", err)
+			return n, c, kvTxn, err
+		}
+
+	}
+	// Save stems of uninomials as well, we will use them for
+	// exact matching to remove false positives from bloom filters.
+	n, c = b.getNameString(p)
+	return n, c, kvTxn, nil
+}
+
+func (*buildio) getNameString(p parsed.Parsed) (model.NameString, canonicalData) {
+	var canData canonicalData
+	var canonicalID, canonicalFullID, canonicalStemID sql.NullString
+	var cardinality sql.NullInt32
+	var year sql.NullInt16
+	if p.Parsed {
+		cardinality = sql.NullInt32{
+			Int32: int32(p.Cardinality),
+			Valid: true,
+		}
+		year = parseYear(p)
+		val := p.Canonical.Simple
+		canonicalID = sql.NullString{
+			String: gnuuid.New(val).String(),
+			Valid:  true,
+		}
+		canData := canonicalData{ID: canonicalID.String, Value: val, Cardinality: int(p.Cardinality)}
+
+		if p.Canonical.Simple != p.Canonical.Full {
+			val = p.Canonical.Full
+			canonicalFullID = sql.NullString{
+				String: gnuuid.New(val).String(),
+				Valid:  true,
+			}
+			canData.FullID = canonicalFullID.String
+			canData.FullValue = val
+		}
+
+		if p.Cardinality > 0 && !strings.Contains(canData.Value, ".") {
+			val = p.Canonical.Stemmed
+			canonicalStemID = sql.NullString{
+				String: gnuuid.New(val).String(),
+				Valid:  true,
+			}
+			canData.StemID = canonicalStemID.String
+			canData.StemValue = val
+		}
+	}
+
+	var bacteria, virus bool
+	if p.Virus {
+		virus = true
+	}
+
+	if p.Bacteria != nil && p.Bacteria.String() == "yes" {
+		bacteria = true
+	}
+
+	var surrogate bool
+	if p.Surrogate != nil {
+		surrogate = true
+	}
+	n := model.NameString{
+		ID:              p.VerbatimID,
+		Name:            p.Verbatim,
+		Cardinality:     cardinality,
+		Year:            year,
+		CanonicalID:     canonicalID,
+		CanonicalFullID: canonicalFullID,
+		CanonicalStemID: canonicalStemID,
+		Virus:           virus,
+		Bacteria:        bacteria,
+		Surrogate:       surrogate,
+		ParseQuality:    int(p.ParseQuality),
+	}
+	return n, canData
 }
 
 func (b *buildio) dbNameString(
+	ctx context.Context,
 	chOut <-chan []model.NameString,
-	chCan <-chan []CanonicalData,
-	wg *sync.WaitGroup,
-) {
-	defer wg.Done()
-	var total int64
+	chCan <-chan []canonicalData,
+) error {
+	var err error
+	var saved, total int64
 	timeStart := time.Now().UnixNano()
 	for {
 		select {
+		case <-ctx.Done():
+			return ctx.Err()
 		case ns, ok := <-chOut:
-			total += b.saveNameStrings(ns)
+			saved, err = b.saveNameStrings(ns)
+			if err != nil {
+				return err
+			}
+			total += saved
 			timeSpent := float64(time.Now().UnixNano()-timeStart) / 1_000_000_000
 			speed := int64(float64(total) / timeSpent)
 			fmt.Printf("\r%s", strings.Repeat(" ", 40))
@@ -277,7 +338,10 @@ func (b *buildio) dbNameString(
 			}
 		case cs, ok := <-chCan:
 			if len(cs) > 0 {
-				b.saveCanonicals(cs)
+				err = b.saveCanonicals(cs)
+				if err != nil {
+					return err
+				}
 			}
 			if !ok {
 				chCan = nil
@@ -288,9 +352,10 @@ func (b *buildio) dbNameString(
 		}
 	}
 	fmt.Println()
+	return nil
 }
 
-func (b *buildio) saveNameStrings(ns []model.NameString) int64 {
+func (b *buildio) saveNameStrings(ns []model.NameString) (int64, error) {
 	db := pgConn(b.cfg)
 	defer db.Close()
 
@@ -300,12 +365,12 @@ func (b *buildio) saveNameStrings(ns []model.NameString) int64 {
 	transaction, err := db.Begin()
 	if err != nil {
 		slog.Error("cannot start transaction", "error", err)
-		os.Exit(1)
+		return 0, err
 	}
 	stmt, err := transaction.Prepare(pq.CopyIn("name_strings", columns...))
 	if err != nil {
 		slog.Error("cannot prepare copy", "error", err)
-		os.Exit(1)
+		return 0, err
 	}
 	for _, v := range ns {
 		_, err = stmt.Exec(v.ID, v.Name, v.Year, v.Cardinality, v.CanonicalID,
@@ -313,7 +378,7 @@ func (b *buildio) saveNameStrings(ns []model.NameString) int64 {
 			v.ParseQuality)
 		if err != nil {
 			slog.Error("cannot insert rows", "error", err)
-			os.Exit(1)
+			return 0, err
 		}
 	}
 
@@ -332,10 +397,10 @@ func (b *buildio) saveNameStrings(ns []model.NameString) int64 {
 		slog.Error("cannot close postgres transaction", "error", err)
 		os.Exit(1)
 	}
-	return int64(len(ns))
+	return int64(len(ns)), nil
 }
 
-func (b *buildio) saveCanonicals(cs []CanonicalData) {
+func (b *buildio) saveCanonicals(cs []canonicalData) error {
 	db := pgConn(b.cfg)
 	defer db.Close()
 
@@ -360,22 +425,23 @@ func (b *buildio) saveCanonicals(cs []CanonicalData) {
 	q := fmt.Sprintf(q0, "canonicals", strings.Join(cal, ","))
 	if _, err = db.Query(q); err != nil {
 		slog.Error("save canonicals failed", "error", err)
-		os.Exit(1)
+		return err
 	}
 	if len(calFull) > 0 {
 		q = fmt.Sprintf(q0, "canonical_fulls", strings.Join(calFull, ","))
 		if _, err = db.Query(q); err != nil {
 			slog.Error("save canonical_fulls failed", "error", err)
-			os.Exit(1)
+			return err
 		}
 	}
 	if len(calStem) > 0 {
 		q = fmt.Sprintf(q0, "canonical_stems", strings.Join(calStem, ","))
 		if _, err = db.Query(q); err != nil {
 			slog.Error("save canonical_stems failed", "error", err)
-			os.Exit(1)
+			return err
 		}
 	}
+	return nil
 }
 
 func parseYear(p parsed.Parsed) sql.NullInt16 {
@@ -389,4 +455,15 @@ func parseYear(p parsed.Parsed) sql.NullInt16 {
 		return res
 	}
 	return sql.NullInt16{Int16: int16(yrInt), Valid: true}
+}
+
+func (b *buildio) openCSV(fileName string) (*csv.Reader, *os.File, error) {
+	path := filepath.Join(b.cfg.DumpDir, fileName)
+	f, err := os.Open(path)
+	if err != nil {
+		slog.Error("Cannot open csv file", "error", err)
+		return nil, nil, err
+	}
+	r := csv.NewReader(f)
+	return r, f, nil
 }
