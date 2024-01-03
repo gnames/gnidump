@@ -74,6 +74,7 @@ func (b *buildio) importNameStrings() {
 	close(chOut)
 	close(chCan)
 	wg2.Wait()
+	slog.Info("Uploaded name_strings table")
 }
 
 func (b *buildio) loadNameStrings(chIn chan<- []string) {
@@ -286,7 +287,7 @@ func (b *buildio) dbNameString(
 			break
 		}
 	}
-	slog.Info("Uploaded name_strings table")
+	fmt.Println()
 }
 
 func (b *buildio) saveNameStrings(ns []model.NameString) int64 {

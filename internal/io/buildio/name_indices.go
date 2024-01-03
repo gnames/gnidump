@@ -57,6 +57,7 @@ func (b *buildio) importNameIndices() {
 	wg.Wait()
 	close(chOut)
 	wg2.Wait()
+	slog.Info("Uploaded name_string_indices table")
 }
 
 func (b *buildio) dbNameStringIndices(chOut <-chan []model.NameStringIndex,
@@ -72,7 +73,7 @@ func (b *buildio) dbNameStringIndices(chOut <-chan []model.NameStringIndex,
 		fmt.Printf("\rUploaded %s indices, %s names/sec",
 			humanize.Comma(total), humanize.Comma(speed))
 	}
-	slog.Info("Uploaded name_string_indices table")
+	fmt.Println()
 }
 
 func (b *buildio) saveNameStringIndices(nsi []model.NameStringIndex) int64 {

@@ -3,9 +3,11 @@ package kvio
 import (
 	"errors"
 	"log/slog"
+	"os"
 
 	"github.com/dgraph-io/badger/v2"
 	"github.com/gnames/gnidump/internal/ent/kv"
+	"github.com/gnames/gnsys"
 )
 
 type kvio struct {
@@ -19,19 +21,17 @@ func New(dir string) kv.KeyVal {
 		dir: dir,
 	}
 
-	// TODO UNCOMMENT
-	// err := gnsys.MakeDir(dir)
-	// if err != nil {
-	// 	slog.Error("Cannot create directory", "error", err, "dir", dir)
-	// 	os.Exit(1)
-	// }
-	//
-	// err = gnsys.CleanDir(dir)
-	// if err != nil {
-	// 	slog.Error("Cannot reset  KeyValue", "error", err, "dir", dir)
-	// 	os.Exit(1)
-	// }
-	// TODO END
+	err := gnsys.MakeDir(dir)
+	if err != nil {
+		slog.Error("Cannot create directory", "error", err, "dir", dir)
+		os.Exit(1)
+	}
+
+	err = gnsys.CleanDir(dir)
+	if err != nil {
+		slog.Error("Cannot reset  KeyValue", "error", err, "dir", dir)
+		os.Exit(1)
+	}
 
 	return &res
 }
@@ -39,7 +39,7 @@ func New(dir string) kv.KeyVal {
 // Open opens a key-value store.
 func (k *kvio) Open() error {
 	if k.kv != nil {
-		return nil
+		slog.Warn("key-value store is not nil")
 	}
 	options := badger.DefaultOptions(k.dir)
 	options.Logger = nil
@@ -54,10 +54,13 @@ func (k *kvio) Open() error {
 
 // Close closes a key-value store.
 func (k *kvio) Close() error {
-	if k.kv != nil {
-		return k.kv.Close()
+	if k.kv == nil {
+		slog.Warn("key-value store is nil")
+		return nil
 	}
-	return nil
+	err := k.kv.Close()
+	k.kv = nil
+	return err
 }
 
 // GetTransaction returns a transaction object.

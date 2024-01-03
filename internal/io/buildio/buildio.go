@@ -33,9 +33,8 @@ func New(
 
 // Build creates a new PostgreSQL database from CSV dump files.
 func (b buildio) Build() error {
-	// TODO UNCOMMENT
-	// b.importNameStrings()
-	// b.importDataSources()
+	b.importNameStrings()
+	b.importDataSources()
 	b.importNameIndices()
 
 	b.importVern()
