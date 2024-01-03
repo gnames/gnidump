@@ -76,6 +76,7 @@ func (b *buildio) importVernIndices() {
 	wg.Wait()
 	close(chOut)
 	wg2.Wait()
+	slog.Info("Uploaded name_string_indices table")
 }
 
 func (b *buildio) dbVernStringIndices(
@@ -94,7 +95,7 @@ func (b *buildio) dbVernStringIndices(
 		fmt.Printf("\rUploaded %s indices, %s names/sec",
 			humanize.Comma(total), humanize.Comma(speed))
 	}
-	slog.Info("Uploaded name_string_indices table")
+	fmt.Println()
 }
 
 func (b *buildio) saveVernStringIndices(nsi []model.VernacularStringIndex) int64 {
