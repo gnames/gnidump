@@ -92,7 +92,7 @@ func (b *buildio) importVernIndices() error {
 		return err
 	}
 
-	slog.Info("Uploaded name_string_indices table")
+	slog.Info("Uploaded data for vernacular_string_indices table")
 	return nil
 }
 

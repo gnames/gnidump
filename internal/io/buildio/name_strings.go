@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/dgraph-io/badger/v2"
@@ -63,6 +64,7 @@ func (b *buildio) importNameStrings() error {
 	chIn := make(chan []string)
 	chCan := make(chan []canonicalData)
 	chOut := make(chan []model.NameString)
+	var wg sync.WaitGroup
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -73,14 +75,21 @@ func (b *buildio) importNameStrings() error {
 		return b.loadNameStrings(ctx, chIn)
 	})
 	for i := 0; i < b.cfg.JobsNum; i++ {
+		wg.Add(1)
 		g.Go(func() error {
-			defer close(chOut)
+			defer wg.Done()
 			return b.workerNameString(ctx, chIn, chCan, chOut)
 		})
 	}
 	g.Go(func() error {
 		return b.dbNameString(ctx, chOut, chCan)
 	})
+
+	go func() {
+		wg.Wait()
+		close(chOut)
+		close(chCan)
+	}()
 
 	if err := g.Wait(); err != nil {
 		slog.Error("error in goroutines", "error", err)
@@ -104,7 +113,7 @@ func (b *buildio) loadNameStrings(ctx context.Context, chIn chan<- []string) err
 		slog.Error("cannot read the header name_strings", "error", err)
 		return err
 	}
-
+loop:
 	for {
 		select {
 		case <-ctx.Done():
@@ -112,7 +121,7 @@ func (b *buildio) loadNameStrings(ctx context.Context, chIn chan<- []string) err
 		default:
 			row, err := r.Read()
 			if err == io.EOF {
-				break
+				break loop
 			}
 			if err != nil {
 				slog.Error("cannot read name_strings.csv", "error", err)
@@ -121,6 +130,7 @@ func (b *buildio) loadNameStrings(ctx context.Context, chIn chan<- []string) err
 			chIn <- row
 		}
 	}
+	return nil
 }
 
 // workerNameString parses name-strings and prepares for the database.
@@ -318,6 +328,7 @@ func (b *buildio) dbNameString(
 	var err error
 	var saved, total int64
 	timeStart := time.Now().UnixNano()
+loop:
 	for {
 		select {
 		case <-ctx.Done():
@@ -348,7 +359,7 @@ func (b *buildio) dbNameString(
 			}
 		}
 		if chOut == nil && chCan == nil {
-			break
+			break loop
 		}
 	}
 	fmt.Println()

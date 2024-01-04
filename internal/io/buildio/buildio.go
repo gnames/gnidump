@@ -38,8 +38,14 @@ func (b *buildio) Build() error {
 		slog.Error("Cannot import name-strings", "error", err)
 		return err
 	}
-	// b.importNameIndices()
-	// b.importDataSources()
+	if err = b.importDataSources(); err != nil {
+		slog.Error("Cannot import name-indices", "error", err)
+		return err
+	}
+	if err = b.importNameIndices(); err != nil {
+		slog.Error("Cannot import name-indices", "error", err)
+		return err
+	}
 
 	if err = b.importVern(); err != nil {
 		slog.Error("Cannot import vernacular_strings", "error", err)
@@ -50,9 +56,19 @@ func (b *buildio) Build() error {
 		return err
 	}
 
-	// b.removeOrphans()
-	// b.createWords()
-	// b.createVerification()
+	if err = b.removeOrphans(); err != nil {
+		slog.Error("Cannot remove orphans", "error", err)
+		return err
+	}
+	if err = b.createWords(); err != nil {
+		slog.Error("Cannot create words", "error", err)
+		return err
+	}
+	if err = b.createVerification(); err != nil {
+		slog.Error("Cannot create verification", "error", err)
+		return err
+	}
+
 	return nil
 }
 

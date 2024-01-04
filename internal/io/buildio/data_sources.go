@@ -532,6 +532,7 @@ func (b *buildio) loadDataSources() ([]model.DataSource, error) {
 	_, err = r.Read()
 	if err != nil {
 		slog.Error("Cannot read csv header", "error", err)
+		return ds, err
 	}
 	for {
 		row, err := r.Read()

@@ -2,10 +2,9 @@ package buildio
 
 import (
 	"log/slog"
-	"os"
 )
 
-func (b *buildio) removeOrphans() {
+func (b *buildio) removeOrphans() error {
 	db := pgConn(b.cfg)
 	defer db.Close()
 
@@ -22,7 +21,7 @@ func (b *buildio) removeOrphans() {
 	_, err := db.Exec(q)
 	if err != nil {
 		slog.Error("Cannot remove orphan name-strings", "error", err)
-		os.Exit(1)
+		return err
 	}
 
 	slog.Info("Removing orphan canonicals")
@@ -38,7 +37,7 @@ func (b *buildio) removeOrphans() {
 	_, err = db.Exec(q)
 	if err != nil {
 		slog.Error("Cannot remove orphan canonicals", "error", err)
-		os.Exit(1)
+		return err
 	}
 
 	slog.Info("Removing orphan canonical_fulls")
@@ -54,7 +53,7 @@ func (b *buildio) removeOrphans() {
 	_, err = db.Exec(q)
 	if err != nil {
 		slog.Error("Cannot remove orphan canonical_fulls", "error", err)
-		os.Exit(1)
+		return err
 	}
 
 	slog.Info("Removing orphan canonical_stems")
@@ -69,13 +68,13 @@ func (b *buildio) removeOrphans() {
 	_, err = db.Exec(q)
 	if err != nil {
 		slog.Error("Cannot remove orphan canonical_stems", "error", err)
-		os.Exit(1)
+		return err
 	}
-
+	return nil
 }
 
 // verificationView creates data for a materialized view.
-func (b *buildio) createVerification() {
+func (b *buildio) createVerification() error {
 	db := pgConn(b.cfg)
 	defer db.Close()
 	slog.Info("Building verification view, it will take some time...")
@@ -106,28 +105,29 @@ SELECT nsi.data_source_id, nsi.record_id, nsi.name_string_id,
 	_, err := db.Exec("DROP MATERIALIZED VIEW IF EXISTS verification")
 	if err != nil {
 		slog.Error("Cannot drop verification view", "error", err)
-		os.Exit(1)
+		return err
 	}
 	_, err = db.Exec(viewQuery)
 	if err != nil {
 		slog.Error("Cannot run verification create", "error", err)
-		os.Exit(1)
+		return err
 	}
 	slog.Info("Building indices for verification view, it will take some time...")
 	_, err = db.Exec("CREATE INDEX ON verification (canonical_id)")
 	if err != nil {
 		slog.Error("Cannot create verification index", "error", err)
-		os.Exit(1)
+		return err
 	}
 	_, err = db.Exec("CREATE INDEX ON verification (name_string_id)")
 	if err != nil {
 		slog.Error("Cannot create verification index2", "error", err)
-		os.Exit(1)
+		return err
 	}
 	_, err = db.Exec("CREATE INDEX ON verification (year)")
 	if err != nil {
 		slog.Error("Cannot create verification index3", "error", err)
-		os.Exit(1)
+		return err
 	}
 	slog.Info("View verification is created")
+	return nil
 }
