@@ -29,7 +29,7 @@ import (
 )
 
 func main() {
-	handle := slog.New(tint.NewHandler(os.Stderr, nil))
-	slog.SetDefault(handle)
+	logger := slog.New(tint.NewHandler(os.Stderr, nil))
+	slog.SetDefault(logger)
 	cmd.Execute()
 }
