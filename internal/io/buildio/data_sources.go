@@ -53,6 +53,20 @@ type NameInf struct {
 	CanonicalFull    string
 }
 
+var WithTaxons = func() map[int]struct{} {
+	withTaxonsDSID := []int{1, 3, 5, 6, 7, 8, 9, 10, 11, 112, 124, 126, 129,
+		131, 136, 137, 140, 141, 143, 144, 147, 148, 152, 154, 156, 157, 158, 161,
+		163, 170, 172, 174, 175, 181, 182, 184, 193, 195, 196, 197, 198, 202,
+		204, 208, 209}
+
+	res := make(map[int]struct{})
+
+	for _, v := range withTaxonsDSID {
+		res[v] = struct{}{}
+	}
+	return res
+}()
+
 // DataSourcesInf provides missing data for data_sources table.
 var DataSourcesInf = map[int]DataSourceInf{
 	1: {
@@ -585,6 +599,11 @@ func rowToDataSource(row []string) (model.DataSource, error) {
 		description = info.Description
 	}
 
+	var hasTaxons bool
+	if _, ok := WithTaxons[id]; ok {
+		hasTaxons = true
+	}
+
 	res = model.DataSource{
 		ID:             id,
 		UUID:           info.UUID,
@@ -597,6 +616,7 @@ func rowToDataSource(row []string) (model.DataSource, error) {
 		OutlinkURL:     info.OutlinkURL,
 		IsCurated:      row[dsIsCuratedF] == "t",
 		IsAutoCurated:  row[dsIsAutoCuratedF] == "t",
+		HasTaxonData:   hasTaxons,
 		RecordCount:    recNum,
 		UpdatedAt:      updateAt,
 	}

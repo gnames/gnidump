@@ -65,6 +65,9 @@ type DataSource struct {
 	// scripts.
 	IsAutoCurated bool
 
+	// Is true if a dataset has taxon data.
+	HasTaxonData bool
+
 	// Number of records in a dataset.
 	RecordCount int
 
