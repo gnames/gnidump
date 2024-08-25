@@ -1,8 +1,13 @@
 package model
 
 import (
+	"context"
 	"database/sql"
+	"fmt"
+	"log/slog"
 	"time"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // DataSource describes metadata of a dataset.
@@ -85,7 +90,7 @@ type NameString struct {
 	// Name-string with authorships and annotations as it is given by a dataset.
 	// Sometimes an authorship is concatenated with a name-string by our
 	// import scripts.
-	Name string `sql:"type:CHARACTER VARYING(255) COLLATE \"C\" NOT NULL"`
+	Name string `gorm:"type:varchar(255);not null"`
 
 	// Year is the year when a name was published
 	Year sql.NullInt16 `gorm:"type:int"`
@@ -125,17 +130,17 @@ type Canonical struct {
 	ID string `gorm:"type:uuid;primary_key;auto_increment:false"`
 
 	// Canonical name-string
-	Name string `sql:"type:CHARACTER VARYING(255) COLLATE \"C\"" gorm:"index:canonical_name;not null"`
+	Name string `gorm:"type:varchar(255);not null"`
 }
 
 // CanonicalFull ia a full canonical form.
 type CanonicalFull struct {
 	// UUID v5 generated for 'full' canonical form (with infraspecific ranks
 	// and hybrid signs for named hybrids).
-	ID string `gorm:"type:uuid;primary_key;auto_increment:false"`
+	ID   string `gorm:"type:uuid;primary_key;auto_increment:false"`
+	Name string `gorm:"type:varchar(255);not null"`
 
 	// Canonical name-string
-	Name string `sql:"type:CHARACTER VARYING(255) COLLATE \"C\"" gorm:"not null"`
 }
 
 // CanonicalStem is a stemmed derivative of a simple canonical form.
@@ -144,7 +149,7 @@ type CanonicalStem struct {
 	ID string `gorm:"type:uuid;primary_key;auto_increment:false"`
 
 	// Stemmed canonical name-string
-	Name string `sql:"type:CHARACTER VARYING(255) COLLATE \"C\"" gorm:"not null"`
+	Name string `gorm:"type:varchar(255);not null"`
 }
 
 // NameStringIndex is a name-strings relations to datasets.
@@ -180,10 +185,10 @@ type NameStringIndex struct {
 	AcceptedRecordID string `gorm:"type:varchar(255);index:accepted_record_id"`
 
 	// Pipe-delimited string containing classification supplied with the resource.
-	Classification string `sql:"type:CHARACTER VARYING COLLATE \"C\""`
+	Classification string `gorm:"type:varchar(350);not null"`
 
 	// RecordIDs of the classificatiaon elements (if given).
-	ClassificationIDs string `sql:"type:CHARACTER VARYING COLLATE \"C\""`
+	ClassificationIDs string `gorm:"type:varchar(350);not null"`
 
 	// Ranks of the classification elements.
 	ClassificationRanks string
@@ -198,10 +203,10 @@ type Word struct {
 
 	// Normalized is the word normalized by GNparser. This field is used
 	// for sorting results.
-	Normalized string `sql:"type:CHARACTER VARYING(255) COLLATE \"C\"" gorm:"primary_key;auto_increment:false"`
+	Normalized string `gorm:"type:varchar(250);primary_key;auto_increment:false"`
 
 	// Modified is a heavy-normalized word. This field is used for matching.
-	Modified string `sql:"type:CHARACTER VARYING(255) COLLATE \"C\"" gorm:"not null;index:words_modified"`
+	Modified string `gorm:"type:varchar(250);not null;index:words_modified"`
 
 	// TypeID is the integer representation of parsed.WordType
 	// from GNparser.
@@ -227,7 +232,7 @@ type VernacularString struct {
 	ID string `gorm:"type:uuid;primary_key;auto_increment:false"`
 
 	// Name is a vernacular name as it is given by a dataset.
-	Name string `sql:"type:CHARACTER VARYING(255) COLLATE \"C\" NOT NULL"`
+	Name string `gorm:"type:varchar(255);not null"`
 }
 
 type VernacularStringIndex struct {
@@ -255,4 +260,39 @@ type VernacularStringIndex struct {
 
 	// CountryCode of the vernacular name.
 	CountryCode string `gorm:"type:varchar(50)"`
+}
+
+func SetCollation(db *pgxpool.Pool) error {
+	ctx := context.Background()
+	type d struct {
+		table, column string
+		varchar       int
+	}
+	data := []d{
+		{"name_strings", "name", 500},
+		{"canonicals", "name", 255},
+		{"canonical_fulls", "current_name", 255},
+		{"canonical_stems", "current_name", 255},
+		{"words", "normalized", 255},
+		{"words", "modified", 255},
+		{"vernacular_strings", "name", 255},
+	}
+	qStr := `
+ALTER TABLE %s
+	ALTER COLUMN %s TYPE VARCHAR(%d) COLLATE "C"
+`
+
+	for _, v := range data {
+		q := fmt.Sprintf(qStr, v.table, v.column, v.varchar)
+		_, err := db.Exec(ctx, q)
+		if err != nil {
+			slog.Error(
+				"Cannot set collation.",
+				"table", v.table,
+				"column", v.column,
+			)
+			return err
+		}
+	}
+	return nil
 }

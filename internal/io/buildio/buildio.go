@@ -5,6 +5,7 @@ import (
 
 	"github.com/gnames/gnidump/internal/ent/build"
 	"github.com/gnames/gnidump/internal/ent/kv"
+	"github.com/gnames/gnidump/internal/ent/model"
 	"github.com/gnames/gnidump/internal/io/modelio"
 	"github.com/gnames/gnidump/pkg/config"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -107,6 +108,13 @@ func (b *buildio) migrate() error {
 		slog.Error("Cannot migrate database", "error", err)
 		return err
 	}
+
+	err = model.SetCollation(b.db)
+	if err != nil {
+		slog.Error("Cannot set collation", "error", err)
+		return err
+	}
+
 	slog.Info("Database migrations completed")
 	return nil
 }

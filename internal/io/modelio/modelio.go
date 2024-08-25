@@ -32,5 +32,6 @@ func (m *modelio) Migrate() error {
 	if m.db.Error != nil {
 		return m.db.Error
 	}
+
 	return nil
 }

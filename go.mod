@@ -1,6 +1,6 @@
 module github.com/gnames/gnidump
 
-go 1.21
+go 1.22.5
 
 require (
 	github.com/dgraph-io/badger/v2 v2.2007.4
