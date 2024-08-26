@@ -14,7 +14,7 @@ import (
 
 	"github.com/dustin/go-humanize"
 	"github.com/gnames/gnfmt"
-	"github.com/gnames/gnidump/internal/ent/model"
+	"github.com/gnames/gnidump/pkg/ent/model"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/text/language"
 )

@@ -5,9 +5,9 @@ import (
 
 	"github.com/gnames/gnidump/internal/ent/build"
 	"github.com/gnames/gnidump/internal/ent/kv"
-	"github.com/gnames/gnidump/internal/ent/model"
-	"github.com/gnames/gnidump/internal/io/modelio"
 	"github.com/gnames/gnidump/pkg/config"
+	"github.com/gnames/gnidump/pkg/ent/model"
+	"github.com/gnames/gnidump/pkg/io/modelio"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 

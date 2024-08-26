@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/dustin/go-humanize"
-	"github.com/gnames/gnidump/internal/ent/model"
+	"github.com/gnames/gnidump/pkg/ent/model"
 	"github.com/gnames/gnparser"
 	"github.com/gnames/gnparser/ent/parsed"
 	"github.com/gnames/gnuuid"
@@ -78,7 +78,10 @@ func (b *buildio) createWords() error {
 	return nil
 }
 
-func processParsedWords(gnp gnparser.GNparser, names []string) ([]model.Word, []model.WordNameString) {
+func processParsedWords(
+	gnp gnparser.GNparser,
+	names []string,
+) ([]model.Word, []model.WordNameString) {
 	wordNames := make([]model.WordNameString, 0, len(names)*5)
 	words := make([]model.Word, 0, len(names)*5)
 	ps := gnp.ParseNames(names)

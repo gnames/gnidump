@@ -17,7 +17,7 @@ import (
 	"github.com/dgraph-io/badger/v2"
 	"github.com/dustin/go-humanize"
 	"github.com/gnames/gnfmt"
-	"github.com/gnames/gnidump/internal/ent/model"
+	"github.com/gnames/gnidump/pkg/ent/model"
 	"github.com/gnames/gnparser"
 	"github.com/gnames/gnparser/ent/parsed"
 	"github.com/gnames/gnuuid"

@@ -1,7 +1,7 @@
 package modelio
 
 import (
-	"github.com/gnames/gnidump/internal/ent/model"
+	"github.com/gnames/gnidump/pkg/ent/model"
 	"github.com/jinzhu/gorm"
 )
 

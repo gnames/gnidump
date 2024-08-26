@@ -6,8 +6,8 @@ import (
 	"log/slog"
 	"strings"
 
-	"github.com/gnames/gnidump/internal/ent/model"
 	"github.com/gnames/gnidump/internal/str"
+	"github.com/gnames/gnidump/pkg/ent/model"
 	"github.com/jackc/pgx/v5"
 )
 

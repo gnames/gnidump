@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gnames/gnidump/internal/ent/model"
 	"github.com/gnames/gnidump/internal/str"
+	"github.com/gnames/gnidump/pkg/ent/model"
 )
 
 // List of fields indices for data sources CSV file. The value corresponds to
