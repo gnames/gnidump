@@ -185,10 +185,10 @@ type NameStringIndex struct {
 	AcceptedRecordID string `gorm:"type:varchar(255);index:accepted_record_id"`
 
 	// Pipe-delimited string containing classification supplied with the resource.
-	Classification string `gorm:"type:varchar(350);not null"`
+	Classification string
 
 	// RecordIDs of the classificatiaon elements (if given).
-	ClassificationIDs string `gorm:"type:varchar(350);not null"`
+	ClassificationIDs string
 
 	// Ranks of the classification elements.
 	ClassificationRanks string
@@ -271,8 +271,8 @@ func SetCollation(db *pgxpool.Pool) error {
 	data := []d{
 		{"name_strings", "name", 500},
 		{"canonicals", "name", 255},
-		{"canonical_fulls", "current_name", 255},
-		{"canonical_stems", "current_name", 255},
+		{"canonical_fulls", "name", 255},
+		{"canonical_stems", "name", 255},
 		{"words", "normalized", 255},
 		{"words", "modified", 255},
 		{"vernacular_strings", "name", 255},
