@@ -10,6 +10,11 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+type NameID interface {
+	StringID() string
+	StringName() string
+}
+
 // DataSource describes metadata of a dataset.
 type DataSource struct {
 	// Hard-coded ID that corresponds to historic IDs given by old versions
@@ -133,6 +138,9 @@ type Canonical struct {
 	Name string `gorm:"type:varchar(255);not null"`
 }
 
+func (c Canonical) StringID() string   { return c.ID }
+func (c Canonical) StringName() string { return c.Name }
+
 // CanonicalFull ia a full canonical form.
 type CanonicalFull struct {
 	// UUID v5 generated for 'full' canonical form (with infraspecific ranks
@@ -143,6 +151,9 @@ type CanonicalFull struct {
 	// Canonical name-string
 }
 
+func (c CanonicalFull) StringID() string   { return c.ID }
+func (c CanonicalFull) StringName() string { return c.Name }
+
 // CanonicalStem is a stemmed derivative of a simple canonical form.
 type CanonicalStem struct {
 	// UUID v5 for the stemmed derivative of a simple canonical form.
@@ -151,6 +162,9 @@ type CanonicalStem struct {
 	// Stemmed canonical name-string
 	Name string `gorm:"type:varchar(255);not null"`
 }
+
+func (c CanonicalStem) StringID() string   { return c.ID }
+func (c CanonicalStem) StringName() string { return c.Name }
 
 // NameStringIndex is a name-strings relations to datasets.
 type NameStringIndex struct {
