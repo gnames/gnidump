@@ -15,74 +15,80 @@ type NameID interface {
 	StringName() string
 }
 
-// DataSource describes metadata of a dataset.
+// DataSource stores metadata associated with a dataset.
 type DataSource struct {
-	// Hard-coded ID that corresponds to historic IDs given by old versions
-	// of resolver.
+	// ID is a hard-coded identifier that aligns with historical IDs from
+	// older versions of the resolver.
 	ID int `gorm:"type:smallint;primary_key;auto_increment:false"`
 
-	// UUID assigned to the resource during creation. UUID is not displayed to
-	// users, but is important for data import from DwCA files.
+	// UUID is a unique identifier assigned to the resource upon creation.
+	// While not shown to users, it's handy for importing data from DwCA files.
 	UUID string `gorm:"type:uuid;default:'00000000-0000-0000-0000-000000000000'"`
 
-	// Long title tries to follow the name of dataset given by its creators.
+	// Title is the full, descriptive title of the dataset, usually as provided
+	// by its creators.
 	Title string `gorm:"type:varchar(255)"`
 
-	// Shortened/Abbreviated title.
+	// TitleShort is a concise or abbreviated version of the dataset title.
 	TitleShort string `gorm:"type:varchar(50)"`
 
-	// Some datasets have versions.
+	// Version denotes the specific version of the dataset, if applicable.
 	Version string `gorm:"type:varchar(50)"`
 
-	// Time when the dataset was created.
-	// Follows a format of a 'YYYY-MM-DD' || 'YYYY-MM' || 'YYYY'.
+	// RevisionDate indicates when the dataset was created or last revised.
+	// It follows the format 'YYYY-MM-DD', 'YYYY-MM', or 'YYYY'.
 	RevisionDate string
 
-	// DOI of the dataset (if exists).
+	// DOI is the Digital Object Identifier for the dataset, if available.
 	DOI string `gorm:"type:varchar(50)"`
 
-	// Citation is a reference that can be used to cite the dataset.
+	// Citation provides the recommended way to reference or cite the dataset.
 	Citation string
 
-	// Authors of the dataset.
+	// Authors lists the individuals or organizations responsible for creating
+	// the dataset.
 	Authors string
 
-	// Description of the dataset. Might include unstructured metainformation
-	// as well.
+	// Description offers a summary of the dataset's content and purpose.
+	// It may also include additional, unstructured metadata.
 	Description string
 
-	// Home URL for the dataset.
+	// WebsiteURL is the primary web address associated with the dataset.
 	WebsiteURL string `gorm:"type:varchar(255)"`
 
-	// Original url used to download the dataset.
+	// DataURL is the original URL from which the dataset was downloaded.
 	DataURL string `gorm:"type:varchar(255)"`
 
-	// A template for creation of an outlink for a dataset record. It contains
-	// a placeholder '{}' for the record's OutlinkID.
+	// OutlinkURL is a template for generating external links to specific records
+	// within the dataset. It includes a placeholder '{}' for the record's
+	// OutlinkID.
 	OutlinkURL string
 
-	// IsOutlinkReady means that the data-source has enough metainformation,
-	// URLs, harvests to be generally good to be pointed out as a 'mature'
-	// data-source at gnames. Resources that are harvested too long time ago
-	// or do not have WebsiteURL/OutlinkURLs would normally have this flag set
-	// to false.
+	// IsOutlinkReady signifies whether the data source has sufficient metadata,
+	// URLs, and harvests to be considered a 'mature' and reliable source on
+	// gnames. Resources with outdated harvests or missing WebsiteURL/OutlinkURLs
+	// will typically have this flag set to false.
 	IsOutlinkReady bool
 
-	// Is true if a dataset undergoes a significant manual curation.
+	// IsCurated is true when we are aware if the dataset has undergone
+	// significant manual curation.
 	IsCurated bool
 
-	// Is true if a dataset undergoes a significant automatic curation by
-	// scripts.
+	// IsAutoCurated is true when we are aware if the dataset has undergone
+	// significant automated curation using scripts.
 	IsAutoCurated bool
 
-	// Is true if a dataset has taxon data.
+	// HasTaxonData indicates whether the dataset contains taxonomic data.
 	HasTaxonData bool
 
-	// Number of records in a dataset.
+	// RecordCount represents the total number of name records in the dataset.
 	RecordCount int
 
-	// Timestamp when the dataset was imported last time. The timeset usually
-	// does not corresponds to when the dataset was created.
+	// VernRecordCount is the number of vernacular string indices.
+	VernRecordCount int
+
+	// UpdatedAt records the timestamp of the dataset's last import.
+	// This might not necessarily coincide with the dataset's creation date.
 	UpdatedAt time.Time `gorm:"type:timestamp without time zone"`
 }
 
@@ -169,16 +175,16 @@ func (c CanonicalStem) StringName() string { return c.Name }
 // NameStringIndex is a name-strings relations to datasets.
 type NameStringIndex struct {
 	// DataSourceID refers to a data-source ID.
-	DataSourceID int `gorm:"primary_key;auto_increment:false"`
+	DataSourceID int `gorm:"index:name_string_ids_idx"`
 
 	// RecordID is a unique ID for record. We do our best to
 	// get it from the record IDs, either global or local,
 	// but if all fails, id is assigned by gnames in a format
 	// of 'gn_{int}'.
-	RecordID string `gorm:"type:varchar(255);primary_key;auto_increment:false"`
+	RecordID string `gorm:"type:varchar(255);index:name_string_ids_idx"`
 
 	// NameStringI is UUID5 of a full name-string from the dataset.
-	NameStringID string `gorm:"type:uuid;index:name_string_id;primary_key;auto_increment:false"`
+	NameStringID string `gorm:"type:uuid;index:name_string_id;index:name_string_ids_idx"`
 
 	// The id to create an outlink.
 	OutlinkID string `gorm:"type:varchar(255)"`
@@ -251,16 +257,16 @@ type VernacularString struct {
 
 type VernacularStringIndex struct {
 	// DataSourceID refers to a data-source ID.
-	DataSourceID int `gorm:"primary_key;auto_increment:false"`
+	DataSourceID int `gorm:"index:vernacular_string_idx_idx"`
 
 	// RecordID is a unique ID for record. We do our best to
 	// get it from the record IDs, either global or local,
 	// but if all fails, id is assigned by gnames in a format
 	// of 'gn_{int}'.
-	RecordID string `gorm:"type:varchar(255);primary_key;auto_increment:false"`
+	RecordID string `gorm:"type:varchar(255);index:vernacular_string_idx_idx"`
 
 	// VernacularStringID is UUID5 of a full name-string from the dataset.
-	VernacularStringID string `gorm:"type:uuid;index:vernacular_string_id;primary_key;auto_increment:false"`
+	VernacularStringID string `gorm:"type:uuid;index:vernacular_string_id;index:vernacular_string_idx_idx"`
 
 	// Language of the vernacular name.
 	Language string `gorm:"type:varchar(100)"`
