@@ -252,7 +252,7 @@ type VernacularString struct {
 	ID string `gorm:"type:uuid;primary_key;auto_increment:false"`
 
 	// Name is a vernacular name as it is given by a dataset.
-	Name string `gorm:"type:varchar(255);not null"`
+	Name string `gorm:"type:varchar(500);index:vern_str_name_idx;not null"`
 }
 
 type VernacularStringIndex struct {
