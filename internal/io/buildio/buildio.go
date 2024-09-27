@@ -36,16 +36,16 @@ func New(
 		return nil, err
 	}
 	res.db = db
-	err = res.resetDB()
-	if err != nil {
-		slog.Error("Cannot reset database", "error", err)
-		return nil, err
-	}
-	err = res.migrate()
-	if err != nil {
-		slog.Error("Cannot migrate database", "error", err)
-		return nil, err
-	}
+	// err = res.resetDB()
+	// if err != nil {
+	// 	slog.Error("Cannot reset database", "error", err)
+	// 	return nil, err
+	// }
+	// err = res.migrate()
+	// if err != nil {
+	// 	slog.Error("Cannot migrate database", "error", err)
+	// 	return nil, err
+	// }
 	return &res, nil
 }
 
@@ -54,28 +54,28 @@ func (b *buildio) Build() error {
 	var err error
 	defer b.db.Close()
 	// import scientific names data
-	if err = b.importNameStrings(); err != nil {
-		slog.Error("Cannot import name-strings", "error", err)
-		return err
-	}
-	if err = b.importDataSources(); err != nil {
-		slog.Error("Cannot import data-sources", "error", err)
-		return err
-	}
-	if err = b.importNameIndices(); err != nil {
-		slog.Error("Cannot import name-string-indices", "error", err)
-		return err
-	}
-
-	// import vernacular data
-	if err = b.importVern(); err != nil {
-		slog.Error("Cannot import vernacular_strings", "error", err)
-		return err
-	}
-	if err = b.importVernIndices(); err != nil {
-		slog.Error("Cannot import vernacular_indices", "error", err)
-		return err
-	}
+	// if err = b.importNameStrings(); err != nil {
+	// 	slog.Error("Cannot import name-strings", "error", err)
+	// 	return err
+	// }
+	// if err = b.importDataSources(); err != nil {
+	// 	slog.Error("Cannot import data-sources", "error", err)
+	// 	return err
+	// }
+	// if err = b.importNameIndices(); err != nil {
+	// 	slog.Error("Cannot import name-string-indices", "error", err)
+	// 	return err
+	// }
+	//
+	// // import vernacular data
+	// if err = b.importVern(); err != nil {
+	// 	slog.Error("Cannot import vernacular_strings", "error", err)
+	// 	return err
+	// }
+	// if err = b.importVernIndices(); err != nil {
+	// 	slog.Error("Cannot import vernacular_indices", "error", err)
+	// 	return err
+	// }
 
 	// finish import by creating words and verification tables
 	if err = b.removeOrphans(); err != nil {
