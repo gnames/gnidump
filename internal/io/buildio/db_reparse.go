@@ -21,6 +21,7 @@ type reparsed struct {
 	nameStringID, name                            string
 	canonicalID, canonicalFullID, canonicalStemID sql.NullString
 	canonical, canonicalFull, canonicalStem       string
+	parseQuality                                  int
 }
 
 func (b *buildio) reparse() error {
@@ -70,7 +71,8 @@ func (b *buildio) loadReparse(
 	chIn chan<- reparsed,
 ) error {
 	q := `
-SELECT id, name, canonical_id, canonical_full_id, canonical_stem_id
+SELECT
+	id, name, canonical_id, canonical_full_id, canonical_stem_id, parse_quality
 FROM name_strings
 `
 	rows, err := b.db.Query(ctx, q)
@@ -87,6 +89,7 @@ FROM name_strings
 		err = rows.Scan(
 			&res.nameStringID, &res.name, &res.canonicalID,
 			&res.canonicalFullID, &res.canonicalStemID,
+			&res.parseQuality,
 		)
 		if err != nil {
 			return err
@@ -130,12 +133,30 @@ func (b *buildio) workerReparse(
 		}
 
 		var canonicalID, canonicalFullID, canonicalStemID string
+		// there might be update in this case too
+		// TODO incorporate it into reparsing.
 		parsed := prs.ParseName(r.name)
-		if !parsed.Parsed {
+		if parsed.ParseQuality+r.parseQuality == 0 {
 			continue
 		}
+
+		if !parsed.Parsed {
+			chOut <- reparsed{
+				nameStringID:    r.nameStringID,
+				name:            r.name,
+				canonicalID:     newNullStr(""),
+				canonicalFullID: newNullStr(""),
+				canonicalStemID: newNullStr(""),
+				canonical:       "",
+				canonicalFull:   "",
+				canonicalStem:   "",
+				parseQuality:    parsed.ParseQuality,
+			}
+			continue
+		}
+
 		canonicalID = gnuuid.New(parsed.Canonical.Simple).String()
-		if canonicalID == r.canonicalID.String {
+		if canonicalID == r.canonicalID.String && parsed.ParseQuality == r.parseQuality {
 			continue
 		}
 		if parsed.Canonical.Simple != parsed.Canonical.Full {
@@ -154,6 +175,7 @@ func (b *buildio) workerReparse(
 			canonical:       parsed.Canonical.Simple,
 			canonicalFull:   parsed.Canonical.Full,
 			canonicalStem:   parsed.Canonical.Stemmed,
+			parseQuality:    parsed.ParseQuality,
 		}
 	}
 	return nil
@@ -191,7 +213,7 @@ func (b *buildio) saveReparse(
 			}
 			b.updateNameString(ctx, r)
 			// Use the logger to write to the file instead of fmt.Printf.
-			logger.Printf("Name: %s, Can: %s", r.name, r.canonical)
+			logger.Printf("Name: %s, Can: %s, Q: %d", r.name, r.canonical, r.parseQuality)
 		}
 	}
 }
@@ -205,11 +227,19 @@ func (b *buildio) updateNameString(ctx context.Context, r reparsed) error {
 
 	_, err = tx.Exec(ctx, `
 		UPDATE name_strings
-		SET canonical_id = $1, canonical_full_id = $2, canonical_stem_id = $3
-		WHERE id = $4`,
-		r.canonicalID, r.canonicalFullID, r.canonicalStemID, r.nameStringID)
+		SET
+			canonical_id = $1, canonical_full_id = $2, canonical_stem_id = $3
+			parse_quality = $4	
+		WHERE id = $5`,
+		r.canonicalID, r.canonicalFullID, r.canonicalStemID,
+		r.parseQuality, r.nameStringID,
+	)
 	if err != nil {
 		return fmt.Errorf("update name_strings: %w", err)
+	}
+
+	if r.parseQuality == 0 {
+		return tx.Commit(ctx)
 	}
 
 	_, err = tx.Exec(ctx, `
