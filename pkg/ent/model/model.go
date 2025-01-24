@@ -192,6 +192,9 @@ type NameStringIndex struct {
 	// Global id from the dataset.
 	GlobalID string `gorm:"type:varchar(255)"`
 
+	// NameID is an ID of a nomenclatural name provided by data source.
+	NameID string `gorm:"type:varchar(255)"`
+
 	// Local id from the dataset.
 	LocalID string `gorm:"type:varchar(255)"`
 

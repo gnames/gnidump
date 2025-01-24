@@ -49,6 +49,32 @@ func New(
 	return &res, nil
 }
 
+func Create(cfg config.Config) error {
+	var err error
+	var db *pgxpool.Pool
+	res := buildio{
+		cfg: cfg,
+	}
+	db, err = pgxConn(cfg)
+	if err != nil {
+		slog.Error("Cannot connect to database", "error", err)
+		return err
+	}
+	res.db = db
+	err = res.resetDB()
+	if err != nil {
+		slog.Error("Cannot reset database", "error", err)
+		return err
+	}
+	err = res.migrate()
+	if err != nil {
+		slog.Error("Cannot migrate database", "error", err)
+		return err
+	}
+	slog.Info("Database is created")
+	return nil
+}
+
 // Build reads CSV dump files and imports their data to Postgres DB.
 func (b *buildio) Build() error {
 	var err error
