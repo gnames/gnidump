@@ -175,6 +175,10 @@ func (c CanonicalStem) StringName() string { return c.Name }
 // NameStringIndex is a name-strings relations to datasets.
 type NameStringIndex struct {
 	// DataSourceID refers to a data-source ID.
+	//
+	// Primary key is changed to index, because in rare occations
+	// DataSourceID, RecordID, NameStringID combinations are not unique.
+	//
 	DataSourceID int `gorm:"index:name_string_ids_idx"`
 
 	// RecordID is a unique ID for record. We do our best to
