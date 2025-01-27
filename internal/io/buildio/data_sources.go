@@ -49,6 +49,7 @@ type NameInf struct {
 	AcceptedRecordID string
 	LocalID          string
 	GlobalID         string
+	NameID           string
 	Canonical        string
 	CanonicalFull    string
 }
@@ -406,12 +407,12 @@ var DataSourcesInf = map[int]DataSourceInf{
 	196: {
 		TitleShort:     "World Flora Online",
 		UUID:           "39e7b959-9b16-460c-a77f-71934b7098e0",
-		HomeURL:        "http://www.worldfloraonline.org",
+		HomeURL:        "https://www.worldfloraonline.org",
 		Description:    "An Online Flora of All Known Plants",
 		IsOutlinkReady: true,
-		OutlinkURL:     "http://www.worldfloraonline.org/taxon/{}",
+		OutlinkURL:     "https://list.worldfloraonline.org/{}",
 		OutlinkID: func(n NameInf) string {
-			return n.RecordID
+			return n.NameID
 		},
 	},
 	197: {
