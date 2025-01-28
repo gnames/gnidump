@@ -208,6 +208,10 @@ type NameStringIndex struct {
 	// The rank of the name.
 	Rank string `gorm:"type:varchar(255)"`
 
+	// TaxonomicStatus provides information if name is accepted, bare name,
+	// synonym etc.
+	TaxonomicStatus string `gorm:"type:varchar(255)"`
+
 	// RecordID of a currently accepted name-string for the taxon.
 	AcceptedRecordID string `gorm:"type:varchar(255);index:accepted_record_id"`
 
