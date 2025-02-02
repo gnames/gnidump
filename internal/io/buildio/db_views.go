@@ -94,11 +94,11 @@ SELECT nsi.data_source_id, nsi.record_id, nsi.name_string_id, ns.name
       ON nsi.name_string_id = ns.id
 )
 SELECT nsi.data_source_id, nsi.record_id, nsi.name_string_id,
-  ns.name, ns.year, ns.cardinality, ns.canonical_id, ns.virus, ns.bacteria,
-  ns.parse_quality, nsi.local_id, nsi.outlink_id, nsi.accepted_record_id,
-  tn.name_string_id as accepted_name_id,
-  tn.name as accepted_name, nsi.classification, nsi.classification_ranks,
-  nsi.classification_ids
+	ns.name, nsi.name_id, nsi.code_id, ns.year, ns.cardinality, ns.canonical_id,
+	ns.virus, ns.bacteria, ns.parse_quality, nsi.local_id, nsi.outlink_id,
+	nsi.taxonomic_status, nsi.accepted_record_id, tn.name_string_id as
+	accepted_name_id, tn.name as accepted_name, nsi.classification,
+	nsi.classification_ranks, nsi.classification_ids
   FROM name_string_indices nsi
     JOIN name_strings ns ON ns.id = nsi.name_string_id
     LEFT JOIN taxon_names tn
