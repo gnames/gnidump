@@ -183,9 +183,9 @@ func (b *buildio) workerReparse(
 			canonical:       parsed.Canonical.Simple,
 			canonicalFull:   parsed.Canonical.Full,
 			canonicalStem:   parsed.Canonical.Stemmed,
-			bacteria:        parsed.Bacteria.Bool(),
+			bacteria:        parsed.Bacteria != nil && parsed.Bacteria.Bool(),
 			virus:           parsed.Virus,
-			surrogate:       parsed.Surrogate.String() != "",
+			surrogate:       parsed.Surrogate != nil,
 			parseQuality:    parsed.ParseQuality,
 		}
 	}
@@ -196,10 +196,10 @@ func parsedIsSame(r reparsed, parsed parsed.Parsed, canonicalID string) bool {
 	if r.canonicalID.String != canonicalID {
 		return false
 	}
-	if r.surrogate != (parsed.Surrogate.String() != "") {
+	if r.surrogate != (parsed.Surrogate != nil) {
 		return false
 	}
-	if r.bacteria != parsed.Bacteria.Bool() {
+	if r.bacteria != (parsed.Bacteria != nil && parsed.Bacteria.Bool()) {
 		return false
 	}
 	if r.virus != parsed.Virus {
