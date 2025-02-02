@@ -13,6 +13,7 @@ import (
 
 	"github.com/dustin/go-humanize"
 	"github.com/gnames/gnparser"
+	"github.com/gnames/gnparser/ent/parsed"
 	"github.com/gnames/gnuuid"
 	"golang.org/x/sync/errgroup"
 )
@@ -21,6 +22,7 @@ type reparsed struct {
 	nameStringID, name                            string
 	canonicalID, canonicalFullID, canonicalStemID sql.NullString
 	canonical, canonicalFull, canonicalStem       string
+	bacteria, surrogate, virus                    bool
 	parseQuality                                  int
 }
 
@@ -72,7 +74,8 @@ func (b *buildio) loadReparse(
 ) error {
 	q := `
 SELECT
-	id, name, canonical_id, canonical_full_id, canonical_stem_id, parse_quality
+	id, name, canonical_id, canonical_full_id, canonical_stem_id, bacteria,
+	virus, surrogate, parse_quality
 FROM name_strings
 `
 	rows, err := b.db.Query(ctx, q)
@@ -89,6 +92,7 @@ FROM name_strings
 		err = rows.Scan(
 			&res.nameStringID, &res.name, &res.canonicalID,
 			&res.canonicalFullID, &res.canonicalStemID,
+			&res.bacteria, &res.virus, &res.surrogate,
 			&res.parseQuality,
 		)
 		if err != nil {
@@ -150,21 +154,25 @@ func (b *buildio) workerReparse(
 				canonical:       "",
 				canonicalFull:   "",
 				canonicalStem:   "",
+				bacteria:        false,
+				virus:           false,
+				surrogate:       false,
 				parseQuality:    parsed.ParseQuality,
 			}
 			continue
 		}
 
-		canonicalID = gnuuid.New(parsed.Canonical.Simple).String()
-		if canonicalID == r.canonicalID.String && parsed.ParseQuality == r.parseQuality {
-			continue
-		}
+		canonicalID = gnuuid.New(parsed.Canonical.Full).String()
 		if parsed.Canonical.Simple != parsed.Canonical.Full {
 			canonicalFullID = gnuuid.New(parsed.Canonical.Full).String()
 		} else {
 			parsed.Canonical.Full = ""
 		}
 		canonicalStemID = gnuuid.New(parsed.Canonical.Stemmed).String()
+
+		if parsedIsSame(r, parsed, canonicalID) {
+			continue
+		}
 
 		chOut <- reparsed{
 			nameStringID:    r.nameStringID,
@@ -175,10 +183,29 @@ func (b *buildio) workerReparse(
 			canonical:       parsed.Canonical.Simple,
 			canonicalFull:   parsed.Canonical.Full,
 			canonicalStem:   parsed.Canonical.Stemmed,
+			bacteria:        parsed.Bacteria.Bool(),
+			virus:           parsed.Virus,
+			surrogate:       parsed.Surrogate.String() != "",
 			parseQuality:    parsed.ParseQuality,
 		}
 	}
 	return nil
+}
+
+func parsedIsSame(r reparsed, parsed parsed.Parsed, canonicalID string) bool {
+	if r.canonicalID.String != canonicalID {
+		return false
+	}
+	if r.surrogate != (parsed.Surrogate.String() != "") {
+		return false
+	}
+	if r.bacteria != parsed.Bacteria.Bool() {
+		return false
+	}
+	if r.virus != parsed.Virus {
+		return false
+	}
+	return true
 }
 
 func newNullStr(s string) sql.NullString {
@@ -229,10 +256,10 @@ func (b *buildio) updateNameString(ctx context.Context, r reparsed) error {
 		UPDATE name_strings
 		SET
 			canonical_id = $1, canonical_full_id = $2, canonical_stem_id = $3
-			parse_quality = $4	
-		WHERE id = $5`,
+			bacteria = $4, virus = $5, surrogate = $6, parse_quality = $7,	
+		WHERE id = $8`,
 		r.canonicalID, r.canonicalFullID, r.canonicalStemID,
-		r.parseQuality, r.nameStringID,
+		r.bacteria, r.virus, r.surrogate, r.parseQuality, r.nameStringID,
 	)
 	if err != nil {
 		return fmt.Errorf("update name_strings: %w", err)
