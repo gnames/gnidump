@@ -163,16 +163,16 @@ func (b *buildio) workerReparse(
 		}
 
 		canonicalID = gnuuid.New(parsed.Canonical.Full).String()
+		if parsedIsSame(r, parsed, canonicalID) {
+			continue
+		}
+
 		if parsed.Canonical.Simple != parsed.Canonical.Full {
 			canonicalFullID = gnuuid.New(parsed.Canonical.Full).String()
 		} else {
 			parsed.Canonical.Full = ""
 		}
 		canonicalStemID = gnuuid.New(parsed.Canonical.Stemmed).String()
-
-		if parsedIsSame(r, parsed, canonicalID) {
-			continue
-		}
 
 		chOut <- reparsed{
 			nameStringID:    r.nameStringID,
