@@ -280,14 +280,14 @@ type VernacularStringIndex struct {
 	VernacularStringID string `gorm:"type:uuid;index:vernacular_string_id;index:vernacular_string_idx_idx"`
 
 	// Language of the vernacular name.
-	Language string `gorm:"type:varchar(100)"`
+	Language string `gorm:"type:varchar(255)"`
 
 	// LangCode is a three-letter code of the language. The code
 	// is received programmatically and might contain errors.
 	LangCode string `gorm:"type:varchar(3);index:lang_code"`
 
 	// Locality of the vernacular name.
-	Locality string `gorm:"type:varchar(100)"`
+	Locality string `gorm:"type:varchar(255)"`
 
 	// CountryCode of the vernacular name.
 	CountryCode string `gorm:"type:varchar(50)"`
