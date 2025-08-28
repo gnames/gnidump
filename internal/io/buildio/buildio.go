@@ -108,6 +108,11 @@ func (b *buildio) Build() error {
 		return err
 	}
 
+	if err = b.fixVernLang(); err != nil {
+		slog.Error("Cannot fix vernacular language", "error", err)
+		return err
+	}
+
 	// finish import by creating words and verification tables
 	if err = b.removeOrphans(); err != nil {
 		slog.Error("Cannot remove orphans", "error", err)

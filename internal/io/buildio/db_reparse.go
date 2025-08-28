@@ -120,6 +120,11 @@ FROM name_strings
 	return nil
 }
 
+func (b *buildio) fixVernLang() error {
+	slog.Info("Fixing vernacular language")
+	return nil
+}
+
 func (b *buildio) workerReparse(
 	ctx context.Context,
 	chIn <-chan reparsed,
@@ -256,7 +261,7 @@ func (b *buildio) updateNameString(ctx context.Context, r reparsed) error {
 		UPDATE name_strings
 		SET
 			canonical_id = $1, canonical_full_id = $2, canonical_stem_id = $3
-			bacteria = $4, virus = $5, surrogate = $6, parse_quality = $7,	
+			bacteria = $4, virus = $5, surrogate = $6, parse_quality = $7,
 		WHERE id = $8`,
 		r.canonicalID, r.canonicalFullID, r.canonicalStemID,
 		r.bacteria, r.virus, r.surrogate, r.parseQuality, r.nameStringID,
@@ -270,8 +275,8 @@ func (b *buildio) updateNameString(ctx context.Context, r reparsed) error {
 	}
 
 	_, err = tx.Exec(ctx, `
-		INSERT INTO canonicals (id, name) 
-		VALUES ($1, $2) 
+		INSERT INTO canonicals (id, name)
+		VALUES ($1, $2)
 		ON CONFLICT (id) DO NOTHING`,
 		r.canonicalID, r.canonical)
 	if err != nil {
@@ -279,8 +284,8 @@ func (b *buildio) updateNameString(ctx context.Context, r reparsed) error {
 	}
 
 	_, err = tx.Exec(ctx, `
-		INSERT INTO canonical_stems (id, name) 
-		VALUES ($1, $2) 
+		INSERT INTO canonical_stems (id, name)
+		VALUES ($1, $2)
 		ON CONFLICT (id) DO NOTHING`,
 		r.canonicalStemID, r.canonicalStem)
 	if err != nil {
@@ -289,8 +294,8 @@ func (b *buildio) updateNameString(ctx context.Context, r reparsed) error {
 
 	if r.canonicalFull != "" {
 		_, err = tx.Exec(ctx, `
-		INSERT INTO canonical_fulls (id, name) 
-		VALUES ($1, $2) 
+		INSERT INTO canonical_fulls (id, name)
+		VALUES ($1, $2)
 		ON CONFLICT (id) DO NOTHING`,
 			r.canonicalFullID, r.canonicalFull)
 		if err != nil {

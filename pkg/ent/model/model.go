@@ -277,14 +277,17 @@ type VernacularStringIndex struct {
 	RecordID string `gorm:"type:varchar(255);index:vernacular_string_idx_idx"`
 
 	// VernacularStringID is UUID5 of a full name-string from the dataset.
-	VernacularStringID string `gorm:"type:uuid;index:vernacular_string_id;index:vernacular_string_idx_idx"`
+	VernacularStringID string `gorm:"type:uuid;index:vernacular_string_id"`
 
-	// Language of the vernacular name.
+	// LanguageOrig of the vernacular name verbatim.
+	LanguageOrig string `gorm:"type:varchar(255)"`
+
+	// Language of the vernacular name after normalization.
 	Language string `gorm:"type:varchar(255)"`
 
 	// LangCode is a three-letter code of the language. The code
 	// is received programmatically and might contain errors.
-	LangCode string `gorm:"type:varchar(3);index:lang_code"`
+	LangCode string `gorm:"type:varchar(3);index:vernacular_string_idx_idx"`
 
 	// Locality of the vernacular name.
 	Locality string `gorm:"type:varchar(255)"`
