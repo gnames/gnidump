@@ -27,15 +27,11 @@ type reparsed struct {
 }
 
 func (b *buildio) reparse() error {
-	slog.Info("Reparsing name-strings")
-
 	chIn := make(chan reparsed)
 	chOut := make(chan reparsed)
 	var wg sync.WaitGroup
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	g, ctx := errgroup.WithContext(ctx)
+	g, ctx := errgroup.WithContext(context.Background())
 
 	g.Go(func() error {
 		defer close(chIn)
@@ -117,11 +113,6 @@ FROM name_strings
 
 	fmt.Fprintf(os.Stderr, "\r%s\r", strings.Repeat(" ", 40))
 	slog.Info("Finished names reparsing")
-	return nil
-}
-
-func (b *buildio) fixVernLang() error {
-	slog.Info("Fixing vernacular language")
 	return nil
 }
 
